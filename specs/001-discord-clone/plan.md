@@ -49,7 +49,8 @@ only up to ~4). No message attachments, reactions, threads, message search, scre
 owner/member, or mobile apps (all explicitly out of scope per spec).
 
 **Scale/Scope**: Student-project scale — small numbers of concurrent users per server/channel/call, not
-production/internet scale. 8 prioritized user stories (spec.md), 13 Convex tables (data-model.md).
+production/internet scale. 8 prioritized user stories (spec.md), 12 app-defined Convex tables plus the
+Convex Auth-owned `users` table extended in place (data-model.md).
 
 ## Constitution Check
 
@@ -109,16 +110,17 @@ convex/
 ├── schema.ts               # All table definitions + indexes (data-model.md)
 ├── auth.ts                 # Convex Auth config (Password provider)
 ├── auth.config.ts
-├── users.ts                # profile queries/mutations, avatar set/change
+├── users.ts                # profile queries/mutations (getMe/updateProfile on the Convex Auth users row)
+├── files.ts                 # shared generateUploadUrl (avatar + server images alike)
 ├── servers.ts              # create, rename, get/list-for-user
 ├── serverMembers.ts        # join (via invite), leave, remove member, list-with-presence
-├── invites.ts              # generate/consume invite links
+├── invites.ts              # getOrCreateForServer/regenerate/consume invite links
 ├── channels.ts             # create/rename/delete text & voice channels
 ├── messages.ts              # send/edit/delete/paginated list (channel messages)
 ├── directMessageThreads.ts  # open-or-get, list-for-user
 ├── directMessages.ts        # send/edit/delete/paginated list (DM messages)
 ├── typingIndicators.ts       # heartbeat set + list-by-channel query
-├── presence.ts                # heartbeat set + list query
+├── presence.ts                # heartbeat set + clearMine (eager logout) + list query
 ├── calls.ts                   # join/leave voice-channel or DM call, list participants, mic/camera toggle
 ├── signals.ts                  # write/read WebRTC signaling payloads, ack/delete after consumption
 ├── crons.ts                    # stale presence/typing/signal sweep jobs
@@ -139,11 +141,12 @@ src/
 │   ├── layout/                  # ServerRail, ChannelSidebar, MemberList
 │   ├── chat/                    # MessageList, MessageItem, MessageComposer, TypingIndicator
 │   └── call/                    # CallGrid, VideoTile, CallControls
-├── features/                    # non-UI logic, separated per Testable Seams
-│   ├── auth/
-│   ├── servers/
-│   ├── messages/
-│   └── calls/                   # useWebRtcCall: RTCPeerConnection + signaling orchestration
+├── features/                    # non-UI logic, separated per Testable Seams — only created where
+│   └── calls/                   # genuine non-UI logic exists (Simplicity First); calls/useWebRtcCall
+│                                 # (RTCPeerConnection + signaling orchestration, research.md §3) is the
+│                                 # one hook complex enough to need this now. Add auth/servers/messages/
+│                                 # siblings later only if their own logic actually grows past a thin
+│                                 # useQuery/useMutation wrapper — don't pre-create them speculatively.
 ├── lib/
 │   └── convexClient.ts
 └── styles/

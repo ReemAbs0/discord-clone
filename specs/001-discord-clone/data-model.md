@@ -8,17 +8,24 @@ that check is documented here as an invariant.
 
 ## User *(spec: User)*
 
-Identity itself (email, password hash, session) is owned by Convex Auth. This table holds the
-app-specific profile fields, one row per authenticated identity.
+**Superseded by research.md §1's verification pass**: Convex Auth's `authTables` (from
+`@convex-dev/auth/server`) already defines a `users` table (`name`, `image`, `email`,
+`emailVerificationTime`, `phone`, `phoneVerificationTime`, `isAnonymous`, indexed on `email`). The
+correct, current pattern is to **extend that same table inline in `convex/schema.ts`**, not keep a
+second profile table linked by an `authId` foreign key. There is exactly one `users` row per
+identity — it *is* the identity.
 
 | Field | Type | Notes |
 |---|---|---|
-| `authId` | `Id<"users">` from Convex Auth | Links this profile row to the Convex Auth identity |
-| `name` | `string` | Display name; not required to be unique (Clarifications 2026-07-14) |
-| `avatarUrl` | `string \| null` | Resolved URL from Convex file storage; `null` → client shows a default avatar |
-| `createdAt` | `number` | |
+| `name` | `string \| undefined` | Convex Auth's own field; used as the display name. Not required to be unique (Clarifications 2026-07-14) |
+| `image` | `string \| undefined` | Convex Auth's own field; unused here (see `avatarStorageId` below for how this app actually resolves an avatar) |
+| `email` | `string \| undefined` | Convex Auth's own field; the login identifier (FR-001) |
+| `avatarStorageId` | `Id<"_storage"> \| undefined` | **App addition.** Resolved to a URL client-side via `ctx.storage.getUrl`; `undefined` → client shows a default avatar |
 
-**Indexes**: `by_authId` (`authId`) — resolve profile from the authenticated identity on every call.
+No app-defined index is needed to resolve "the current user" — every query/mutation gets it directly
+via `getAuthUserId(ctx)` (research.md §1), which returns the `Id<"users">` of this same row. The
+`email` index Convex Auth already defines is sufficient for anything auth-related; no additional
+`by_authId`-style index applies since there is no second table to join.
 
 ## Server *(spec: Server)*
 
@@ -57,7 +64,14 @@ every server/channel/message access, and to enforce the one-row-per-(server,user
 | `createdAt` | `number` | |
 
 **Indexes**: `by_code` (`code`) — resolve an invite link to a server on open; `by_server` (`serverId`) —
-regenerate/replace a server's current invite.
+find a server's current invite (to display it, or to delete it on regenerate).
+
+*Regenerate semantics (resolves an ambiguity between FR-006 and the Assumptions section)*: a server has
+at most one active `Invite` row at a time. `invites.getOrCreateForServer` is idempotent — it returns the
+existing code if one exists, never creating a second. A separate `invites.regenerate` mutation deletes
+the current row and inserts a fresh one with a new `code`, invalidating the old link (matches "the owner
+can generate a new link at any time" in Assumptions, without the ambiguity of `getOrCreate` silently
+rotating on every call).
 
 ## Channel *(spec: Channel)*
 
@@ -89,6 +103,12 @@ load (FR-020) via `.order("desc").paginate(...)`.
 
 *Invariant*: only `authorId === caller` may edit/delete a row (FR-019).
 
+*Read-time join, not a stored field*: FR-016 requires every message to display the author's display
+name and avatar. `messages.list` (contracts/convex-api.md) MUST join each row against `users` by
+`authorId` and return an enriched shape (`Message & { authorName: string, authorAvatarUrl: string | null }`),
+not the raw stored document — storing a denormalized copy on the message itself would go stale the
+moment a user changes their name/avatar.
+
 ## DirectMessageThread *(spec: Direct Message Conversation)*
 
 | Field | Type | Notes |
@@ -116,6 +136,8 @@ once created, the thread remains accessible even if they later stop sharing a se
 
 **Indexes**: `by_thread_and_creation` (`threadId`, `_creationTime`) — same pagination pattern as `Message`.
 
+*Read-time join*: same as `Message` above — `directMessages.list` returns `DirectMessage & { authorName, authorAvatarUrl }`, joined against `users` at read time, not stored denormalized.
+
 ## TypingIndicator *(ephemeral, per Clarifications/Assumptions)*
 
 | Field | Type | Notes |
@@ -137,6 +159,12 @@ once created, the thread remains accessible even if they later stop sharing a se
 **Indexes**: `by_user` (`userId`) — upsert on heartbeat, and look up a specific user's status; presence
 for a server's member list is resolved by joining each `ServerMember.userId` against this table
 client-side/in-query, not by a server-scoped index (presence itself has no server concept).
+
+*Reconciling with SC-004 ("within 5 seconds")*: see research.md §2 — an explicit sign-out calls
+`presence.clearMine` (row delete) directly, which is reflected to other subscribers in well under 5s
+like any other write. The passive cron sweep (crash/closed-laptop case, no explicit "offline" event to
+react to) is deliberately on a longer cadence and is documented as a best-effort case outside the 5s
+target, not a mechanism expected to hit it.
 
 ## Call *(spec: Call)*
 
@@ -165,6 +193,11 @@ client-side/in-query, not by a server-scoped index (presence itself has no serve
 **Indexes**: `by_call` (`callId`) — list active participants (filter `leftAt = null`) and enforce the
 4-participant cap (FR-025) before inserting a new row; `by_call_and_user` (`callId`, `userId`) — find
 this user's own row to toggle mic/camera or mark `leftAt`.
+
+*FR-028's "speaking" half is deliberately NOT a field here*: unlike `micOn`/`cameraOn` (explicit user
+actions, needed by every other participant so belong in shared state), "is this participant currently
+speaking" is derived continuously from a live audio signal and must never round-trip through Convex —
+see research.md §5 for the client-local Web Audio API detection this relies on instead.
 
 ## Signal *(spec: not a spec-level entity — WebRTC signaling transport for Call)*
 

@@ -4,11 +4,18 @@ All technology choices were specified directly by the user (see plan.md Technica
 `NEEDS CLARIFICATION` markers remain from that section. This document records the concrete patterns and
 rationale needed to implement that stack correctly and in line with the constitution.
 
-> **Verification pass (2026-07-14)**: Sections 1, 2, 3, 4, and 6 were re-checked against current official
+> **Verification pass (2026-07-14)**: Sections 1, 2, 3, 4, and 7 were re-checked against current official
 > documentation (docs.convex.dev, labs.convex.dev/auth, MDN, the WebRTC W3C spec) because library/spec
 > APIs move faster than this document's original draft. Each updated section below cites its source and
 > notes anything that changed versus the original draft. Package versions are pinned to what was current
 > on the verification date; re-check before implementation if significant time has passed.
+>
+> **Audit follow-up pass (same day)**: a plan/spec audit surfaced concrete gaps this document didn't
+> cover — the WebRTC signaling flow couldn't be narrated end-to-end (§3 now includes the peer-connection
+> registry, dual creation triggers, `onicecandidate` wiring, and ack-timing policy it was missing), FR-028
+> had no design at all (now §5), and the presence sweep numbers alone couldn't satisfy SC-004 (§2 now
+> adds the eager login/logout transitions). Section numbers shifted accordingly — anything citing an old
+> section number from before this pass is stale.
 
 ## 1. Convex Auth with the Password provider
 
@@ -128,19 +135,31 @@ handling staleness, which pure subscriptions can't detect on their own (a client
 closing cleanly never sends a final "offline" write). The heartbeat write cadence is normal duty-cycle
 behavior for any presence system (Discord itself works this way), not a workaround.
 
-**Alternative found during verification, not adopted**: Convex now publishes an official
-`@convex-dev/presence` Component (heartbeat + stale-cleanup + scoped "rooms," hook from
-`@convex-dev/presence/react`) that implements essentially this same pattern out of the box. It was not
-in scope when the user's plan input listed `typingIndicators`/`presence` as tables to hand-roll, so this
-plan keeps the custom-table design to match that explicit instruction and to keep full control over the
-per-channel typing scope (the component is presence-oriented; typing-per-channel would still likely need
-a custom table alongside it). **Flagging this for the user/team**: adopting `@convex-dev/presence` for
-the presence half specifically could remove `presence.ts` and its cron sweep entirely — worth a deliberate
-yes/no decision before `/speckit-tasks`, not something this document silently decides.
+**Decided (resolving the open flag from the previous verification pass)**: keep the hand-rolled
+`presence`/`typingIndicators` tables rather than adopting the official `@convex-dev/presence` Component.
+Typing indicators need a custom, channel-scoped table regardless (the component is presence-only), and
+running one pattern (heartbeat + cron sweep) uniformly across both presence and typing is simpler to
+reason about than mixing an official component for one and a hand-rolled table for the other — Simplicity
+First favors the single consistent mechanism here over the "more official but inconsistent" option.
+
+**Eager transitions, not just the passive sweep**: heartbeat-write-plus-cron-sweep alone can't satisfy
+SC-004's "within 5 seconds" for every case — a 15s sweep cadence with a 30s staleness threshold gives a
+worst case of ~30-45s, which only bounds the *crash/closed-laptop* case (where there is no clean "offline"
+event to react to; this is explicitly accepted as a best-effort, longer-than-5s case, not a target the
+sweep needs to hit). For the two cases that *are* discrete, detectable events, don't wait on the sweep at
+all:
+- **Login** → `presence.heartbeat` is called immediately on successful sign-in (in addition to its
+  recurring cadence), so "online" appears the moment the session starts.
+- **Logout** → the sign-out action calls a `presence.clearMine` mutation (deletes the caller's own row)
+  *before* completing sign-out, so "offline" is a normal reactive write, visible to other subscribers in
+  well under 5 seconds — the same mechanism that makes a chat message appear instantly.
 
 **Other alternatives considered and rejected**: Client-side `setInterval` polling of a query's result
 (exactly the polling the constitution forbids); a "last write wins, never expires" row with no cron sweep
-(a user who closes their laptop lid would appear online forever).
+(a user who closes their laptop lid would appear online forever); tightening the sweep interval/threshold
+enough to bound the crash case within 5s too (rejected — would mean a ~1-2s heartbeat cadence and ~1s
+cron, a write-volume cost not justified for a student-scale app when the two explicit-action cases already
+satisfy the success criterion for the common path).
 
 ## 3. WebRTC signaling over a Convex table, using the Perfect Negotiation pattern
 
@@ -149,49 +168,79 @@ yes/no decision before `/speckit-tasks`, not something this document silently de
 (indexed by `(callId, toUserId)`), processes any new row through the matching `RTCPeerConnection`, and
 calls a `signals.ack` mutation to delete it once consumed, keeping the table small.
 
+**0. Peer-connection registry and orchestration (previously missing from this document)**: `useWebRtcCall`
+keeps a `Map<Id<"users">, PeerState>` (`PeerState = { pc, polite, makingOffer, ignoreOffer,
+isSettingRemoteAnswerPending }`), one entry per remote participant currently in the call. Two independent
+triggers create an entry, because either one might fire first and both must lead to the same outcome:
+- **Proactive**: the hook is subscribed to `calls.listParticipants({ callId })`; whenever a participant
+  appears that has no registry entry yet, create one (`new RTCPeerConnection(...)`, `pc.addTrack()` for
+  each local track — which itself fires `onnegotiationneeded` and starts the exchange below).
+- **Reactive/lazy**: the hook is also subscribed to `signals.listForMe({ callId })`; if a row arrives whose
+  `fromUserId` has no registry entry yet (the proactive path hasn't run for it on this side yet — a race,
+  not an edge case, since both peers observe the same participant-list update at roughly the same time),
+  create the entry on the spot before processing that row.
+
+Both paths converge on the same `PeerState`, which is why the negotiation logic below is safe to run
+symmetrically on both sides at once — that's what "perfect negotiation" is *for*.
+
+**Teardown**: when a participant drops out of `calls.listParticipants` (their `CallParticipant.leftAt`
+becomes non-null), the hook calls `pc.close()` on their entry and removes it from the registry, tearing
+down that video tile.
+
 **Negotiation pattern (verified current against MDN, "Perfect negotiation," updated 2025-05-27)**: each
 pairwise `RTCPeerConnection` in the mesh runs the current MDN-recommended perfect-negotiation state
-machine, transported over the `signals` table instead of a raw WebSocket:
+machine, transported over the `signals` table instead of a raw WebSocket. `sendSignal(toUserId, msg)` below
+is a thin wrapper around the `signals.send` mutation; `ackSignal(signalId)` wraps `signals.ack`:
 
 ```javascript
-// one of these per remote peer in the mesh, keyed by remote user ID
-let makingOffer = false;
-let ignoreOffer = false;
-let isSettingRemoteAnswerPending = false;
-const polite = myUserId > remoteUserId; // deterministic per-pair, needs no extra round-trip
+// one PeerState per remote peer in the mesh, keyed by remote user ID (the registry above)
+function createPeerState(remoteUserId) {
+  const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+  const state = { pc, polite: myUserId > remoteUserId, makingOffer: false, ignoreOffer: false, isSettingRemoteAnswerPending: false };
 
-pc.onnegotiationneeded = async () => {
-  try {
-    makingOffer = true;
-    await pc.setLocalDescription(); // no-arg: auto-detects offer vs answer, current standard since 2017
-    await sendSignal({ type: "description", description: pc.localDescription });
-  } finally {
-    makingOffer = false;
-  }
-};
+  pc.onnegotiationneeded = async () => {
+    try {
+      state.makingOffer = true;
+      await pc.setLocalDescription(); // no-arg: auto-detects offer vs answer, current standard since 2017
+      await sendSignal(remoteUserId, { type: "description", description: pc.localDescription });
+    } finally {
+      state.makingOffer = false;
+    }
+  };
 
-// on receiving a signals row addressed to me from this remote peer:
-async function onSignal({ description, candidate }) {
+  // previously missing entirely: without this, no ICE candidate is ever sent and the connection can never leave "checking"
+  pc.onicecandidate = ({ candidate }) => {
+    if (candidate) sendSignal(remoteUserId, { type: "candidate", candidate });
+  };
+
+  return state;
+}
+
+// on receiving a signals row addressed to me, dispatched by fromUserId to its PeerState:
+async function onSignal(state, { description, candidate }, signalId) {
   if (description) {
-    const readyForOffer = !makingOffer && (pc.signalingState === "stable" || isSettingRemoteAnswerPending);
+    const readyForOffer = !state.makingOffer && (state.pc.signalingState === "stable" || state.isSettingRemoteAnswerPending);
     const offerCollision = description.type === "offer" && !readyForOffer;
-    ignoreOffer = !polite && offerCollision;
-    if (ignoreOffer) return;
+    state.ignoreOffer = !state.polite && offerCollision;
+    if (state.ignoreOffer) { await ackSignal(signalId); return; }
 
-    isSettingRemoteAnswerPending = description.type === "answer";
-    await pc.setRemoteDescription(description); // implicitly rolls back our own pending offer if we're polite
-    isSettingRemoteAnswerPending = false;
+    state.isSettingRemoteAnswerPending = description.type === "answer";
+    await state.pc.setRemoteDescription(description); // implicitly rolls back our own pending offer if we're polite
+    state.isSettingRemoteAnswerPending = false;
     if (description.type === "offer") {
-      await pc.setLocalDescription();
-      await sendSignal({ type: "description", description: pc.localDescription });
+      await state.pc.setLocalDescription();
+      await sendSignal(state.remoteUserId, { type: "description", description: state.pc.localDescription });
     }
   } else if (candidate) {
     try {
-      await pc.addIceCandidate(candidate);
+      await state.pc.addIceCandidate(candidate);
     } catch (err) {
-      if (!ignoreOffer) throw err;
+      if (!state.ignoreOffer) throw err;
     }
   }
+  // ack AFTER successfully applying — never ack-then-apply, so a thrown error above leaves the row
+  // for the next reactive delivery to retry instead of silently dropping it
+  await ackSignal(signalId);
 }
 ```
 
@@ -202,8 +251,11 @@ Notes worth preserving from verification (not obvious from older/cached knowledg
   round-trip** — comparing user IDs (`myUserId > remoteUserId`) is simpler than "first to connect" for a
   mesh, since every pairwise connection needs its own polite/impolite flag and state
   (`makingOffer`/`ignoreOffer`/`isSettingRemoteAnswerPending`), tracked per remote peer, not globally.
-- MDN's guide only covers 1:1 connections; extending one independent state machine per peer connection in
-  the mesh is this project's extrapolation, not an MDN-sourced claim.
+- MDN's guide only covers 1:1 connections; the registry, dual creation triggers, and teardown above are
+  this project's extrapolation to a mesh, not an MDN-sourced claim.
+- The bootstrap case (the first participant to join an empty voice channel) needs no `RTCPeerConnection`
+  at all — the registry starts empty and only grows as `listParticipants` reports other active
+  participants, so there's nothing special to implement for "joining alone."
 
 **Rationale**: Directly replaces the Socket.io server the user explicitly said to avoid — Convex's
 reactive queries are a sufficient transport for the low-volume, bursty signaling traffic a mesh call of
@@ -247,7 +299,26 @@ call rejoin for every transient network hiccup.
 (rejected — heavier-handed than necessary; `restartIce()` reuses the existing connection and media state);
 no reconnection handling at all (rejected — fails the edge case requirement outright).
 
-## 5. STUN-only NAT traversal (no TURN)
+## 5. Speaking indicator (FR-028) — client-local, never through Convex
+
+**Decision**: "Is this participant currently speaking" is computed independently by every client from the
+audio it already has — its own local mic track, and each remote track received via `ontrack` — using the
+Web Audio API: `AudioContext` + `createMediaStreamSource(track's stream)` + `AnalyserNode.getByteFrequencyData`
+polled on a `requestAnimationFrame` loop, comparing average volume against a fixed threshold. The boolean
+result is rendered directly on that participant's video tile locally; it is **never written to Convex**.
+
+**Rationale**: This is exactly the kind of fast-changing (multiple times/second), purely presentational
+signal that must not round-trip through a database write — doing so would add write volume and latency to
+something that needs to feel instantaneous, and every client already receives the audio it needs to derive
+the answer itself. `CallParticipant.micOn` (real Convex state) still governs whether a participant's audio
+is being sent at all; "speaking" is a derived visual layered on top of a track that's actually flowing.
+
+**Alternatives considered**: Broadcasting a `isSpeaking` boolean through `CallParticipant` on a heartbeat
+(rejected — turns a many-times-per-second local signal into a write-heavy Convex pattern for no benefit,
+and adds latency to something that should be immediate); server-side audio analysis (rejected — Convex
+never sees the media at all in a full-mesh design; audio flows peer-to-peer, not through the backend).
+
+## 6. STUN-only NAT traversal (no TURN)
 
 **Decision**: Use only Google's public STUN server (`stun:stun.l.google.com:19302`) in the
 `RTCPeerConnection` ICE configuration:
@@ -273,7 +344,7 @@ or carrier-grade NAT networks) may be unable to establish a direct peer connecti
 fail to connect. This is called out in quickstart.md as a known limitation, and the UI should surface a
 clear "call failed to connect" state (no silent hang) rather than attempt to work around it.
 
-## 6. Message pagination (newest-first, infinite scroll)
+## 7. Message pagination (newest-first, infinite scroll)
 
 **Decision**: Use Convex's built-in cursor pagination on an index ordered by `_creationTime` descending,
 scoped to `channelId` (or `directMessageThreadId`).
@@ -310,7 +381,7 @@ would not scale even for a student project once a channel has real history); han
 cache patching via `localStore.setQuery` (rejected in favor of the built-in paginated-list helpers, which
 do the same thing with less code — Simplicity First).
 
-## 7. Testing approach (Testable Seams)
+## 8. Testing approach (Testable Seams)
 
 **Decision**:
 - **Vitest + React Testing Library** for frontend unit/component tests, targeting logic in
@@ -330,7 +401,7 @@ Playwright chosen for first-class multi-context support, needed to simulate two 
 sessions for real-time and call testing). Jest instead of Vitest (rejected — Vitest is the natural fit
 for a Vite project, avoiding a second build-tool config).
 
-## 8. Avatar / server image storage
+## 9. Avatar / server image storage
 
 **Decision**: Use Convex file storage (`ctx.storage.generateUploadUrl` / `ctx.storage.getUrl`) for user
 avatars and server images. The `users` table's `avatarStorageId` field (see §1) and the `servers` table
