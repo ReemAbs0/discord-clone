@@ -1,50 +1,129 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: (unratified template) → 1.0.0
+- Modified principles: n/a (initial ratification)
+- Added principles:
+  - I. Simplicity First
+  - II. Real-Time Correctness
+  - III. Type Safety End-to-End
+  - IV. Security Basics (NON-NEGOTIABLE)
+  - V. Incremental Delivery
+  - VI. Testable Seams
+- Added sections: Technology Constraints, Development Workflow, Governance
+- Removed sections: none
+- Templates requiring updates:
+  - ✅ .specify/templates/plan-template.md (generic Constitution Check gate already compatible, no edit needed)
+  - ✅ .specify/templates/spec-template.md (no constitution-specific references, no edit needed)
+  - ✅ .specify/templates/tasks-template.md (no constitution-specific references, no edit needed)
+  - ✅ .specify/templates/checklist-template.md (no constitution-specific references, no edit needed)
+  - ✅ .claude/skills/speckit-*/SKILL.md (already reference constitution generically, no stale agent-specific names found)
+- Follow-up TODOs: none
+-->
+
+# Discord Clone Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Simplicity First
+Prefer the smallest solution that satisfies the spec. No speculative
+abstractions, no libraries beyond those already committed to in the current
+plan. Every added dependency, abstraction layer, or generalized interface
+MUST be justified by a concrete, current requirement, not a hypothetical
+future one.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Rationale**: As a student-built project, complexity accumulates faster
+than it can be reasoned about. The smallest solution that works keeps the
+codebase understandable and shippable by a small team.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Real-Time Correctness
+The UI MUST reflect server state via reactive subscriptions (e.g., live
+queries or websockets), never via manual polling or requiring a page
+refresh. Any view displaying data that can change on the server — messages,
+presence, call state, typing indicators, etc. — MUST subscribe to updates
+rather than fetch once and go stale.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: This is a real-time chat and video product; stale or
+manually-refreshed state defeats its core value proposition.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Type Safety End-to-End
+TypeScript strict mode MUST be enabled across the entire codebase, frontend
+and backend alike, with no unchecked `any` used to bypass the type system.
+Database access MUST go only through typed schema definitions or generated
+types — no untyped raw queries or ad-hoc object shapes crossing the
+client/server boundary.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: End-to-end type safety catches an entire class of runtime
+bugs before they ship, which matters most for a small team without a
+dedicated QA process.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. Security Basics (NON-NEGOTIABLE)
+Every backend function MUST verify that the caller is authenticated and
+authorized for the specific resource it touches before performing any read
+or write. There is no implicit trust boundary: authorization checks MUST
+run on the server, never solely in the client.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Chat and video apps carry private messages and calls; a
+single missing authorization check exposes another user's private data.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Incremental Delivery
+The application MUST build and run successfully after each user story is
+completed. The main branch MUST never be left in a broken (non-building,
+non-running) state. Work MUST be structured so that each user story is a
+complete, demonstrable increment on its own.
+
+**Rationale**: Keeps the project always in a demoable state and prevents
+large, unverified batches of work from piling up before anyone can tell
+whether they actually work.
+
+### VI. Testable Seams
+Business logic MUST be separated from UI/presentation code so it can be
+tested without rendering components. Critical user flows — at minimum,
+sending a message and joining a call — MUST have at least a smoke test
+verifying they work end-to-end.
+
+**Rationale**: Separating logic from UI keeps tests fast and meaningful;
+smoke tests on critical flows catch regressions before users do, without
+requiring full TDD ceremony on every change.
+
+## Technology Constraints
+
+- All new code MUST be written in TypeScript with `strict: true` enabled;
+  no project-wide relaxation of strict mode is permitted.
+- Real-time data MUST flow through the project's chosen reactive data layer
+  (live queries/subscriptions), never through ad-hoc polling loops.
+- No new runtime dependency may be introduced without first being recorded
+  in the feature's `plan.md`; unplanned dependencies are a simplicity
+  violation (Principle I).
+
+## Development Workflow
+
+- Every `plan.md` MUST include a Constitution Check section, evaluated
+  before Phase 0 research and re-evaluated after Phase 1 design. Any
+  unresolved violation MUST be recorded in Complexity Tracking with an
+  explicit justification.
+- A user story is not done until: it builds, it runs, its critical flow (if
+  any) has a smoke test, and it does not regress any previously completed
+  story.
+- Commits or merges to the main branch MUST NOT leave the build broken. If
+  a temporarily broken state is unavoidable mid-story, it MUST be resolved
+  before starting the next story.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other project practices and conventions.
+Amendments require a documented rationale, an explicit version bump per the
+policy below, and propagation to any dependent templates (plan, spec,
+tasks, checklists) before the amendment is considered complete.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Versioning policy:
+- **MAJOR**: backward-incompatible governance change, or removal/redefinition
+  of a principle.
+- **MINOR**: a new principle or materially expanded guidance is added.
+- **PATCH**: clarification or wording fix with no semantic change.
+
+All plans and pull requests MUST verify compliance with these principles.
+Unjustified complexity MUST be rejected or explicitly recorded in
+Complexity Tracking with a rationale for why a simpler alternative was
+insufficient.
+
+**Version**: 1.0.0 | **Ratified**: 2026-07-14 | **Last Amended**: 2026-07-14
