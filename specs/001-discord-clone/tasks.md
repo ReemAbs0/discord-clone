@@ -68,8 +68,9 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 - [ ] T019 [US1] Create `convex/crons.ts` with the `sweepStalePresence` job (every 15s, 30s staleness threshold — research.md §2)
 - [ ] T020 [US1] Create `src/lib/usePresenceHeartbeat.ts`: recurring `presence.heartbeat` call plus an immediate call on login, and wire `presence.clearMine` into the sign-out action for the eager offline transition (research.md §2)
 - [ ] T021 [US1] Build a minimal authenticated landing view (`src/routes/Home.tsx`) rendering the caller's own profile (name/avatar) and an online indicator, sufficient to exercise the Independent Test
-- [ ] T022 [P] [US1] Vitest test for `usePresenceHeartbeat` in `tests/unit/usePresenceHeartbeat.test.ts`
-- [ ] T023 [P] [US1] `convex-test` tests for `presence.ts` (heartbeat upsert, `clearMine` deletion, auth requirement) in `tests/unit/presence.test.ts`
+- [ ] T022 [US1] Build a profile-editing view (e.g. a settings panel reachable from `Home.tsx`) letting the user change their display name and upload a new avatar via `files.generateUploadUrl` + `users.updateProfile` (FR-002)
+- [ ] T023 [P] [US1] Vitest test for `usePresenceHeartbeat` in `tests/unit/usePresenceHeartbeat.test.ts`
+- [ ] T024 [P] [US1] `convex-test` tests for `presence.ts` (heartbeat upsert, `clearMine` deletion, auth requirement) in `tests/unit/presence.test.ts`
 
 **Checkpoint**: US1 fully functional and independently testable
 
@@ -81,16 +82,16 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Create a server, confirm "general" exists automatically, send a message, confirm it appears immediately in another session viewing the same channel (spec.md US2).
 
-- [ ] T024 [P] [US2] Create `convex/servers.ts`: `create` (atomically also creates the owner's `ServerMember` row and the default "general" `Channel` — FR-004/FR-005), `listForMe`, `get`, `rename` (contracts/convex-api.md servers.ts)
-- [ ] T025 [P] [US2] Create `convex/channels.ts` with `listForServer` only for now (`create`/`rename`/`remove` land in US5)
-- [ ] T026 [US2] Create `convex/messages.ts` with `send` and `list` (paginated, newest-first, **joined against `users` for `authorName`/`authorAvatarUrl`** — FR-016, data-model.md Message read-time-join note, contracts/convex-api.md messages.ts); `edit`/`remove` land in US4
-- [ ] T027 [P] [US2] Build `src/routes/ServerLayout.tsx` (server rail + create-server action) and `src/components/layout/ServerRail.tsx`
-- [ ] T028 [US2] Build `src/routes/ChannelPage.tsx` rendering the "general" channel via `usePaginatedQuery(api.messages.list, ...)`
-- [ ] T029 [P] [US2] Build `src/components/chat/MessageList.tsx` and `MessageItem.tsx` (author name, avatar, timestamp, content per FR-016)
-- [ ] T030 [P] [US2] Build `src/components/chat/MessageComposer.tsx` (send message, optimistic `insertAtTop` per research.md §7)
-- [ ] T031 [P] [US2] Playwright smoke test `tests/e2e/send-message.spec.ts` — two browser contexts, one sends, the other sees it in real time (constitution-mandated minimum)
-- [ ] T032 [P] [US2] `convex-test` tests for `servers.ts` (atomic create) in `tests/unit/servers.test.ts`
-- [ ] T033 [P] [US2] `convex-test` tests for `messages.ts` `send`/`list` (membership authz, author join) in `tests/unit/messages.test.ts`
+- [ ] T025 [P] [US2] Create `convex/servers.ts`: `create` (atomically also creates the owner's `ServerMember` row and the default "general" `Channel` — FR-004/FR-005), `listForMe`, `get`, `rename` (contracts/convex-api.md servers.ts)
+- [ ] T026 [P] [US2] Create `convex/channels.ts` with `listForServer` only for now (`create`/`rename`/`remove` land in US5)
+- [ ] T027 [US2] Create `convex/messages.ts` with `send` and `list` (paginated, newest-first, **joined against `users` for `authorName`/`authorAvatarUrl`** — FR-016, data-model.md Message read-time-join note, contracts/convex-api.md messages.ts); `edit`/`remove` land in US4
+- [ ] T028 [P] [US2] Build `src/routes/ServerLayout.tsx` (server rail + create-server action) and `src/components/layout/ServerRail.tsx`
+- [ ] T029 [US2] Build `src/routes/ChannelPage.tsx` rendering the "general" channel via `usePaginatedQuery(api.messages.list, ...)` (a full channel-list sidebar isn't needed yet — only "general" exists until US5's `ChannelSidebar.tsx` lands)
+- [ ] T030 [P] [US2] Build `src/components/chat/MessageList.tsx` and `MessageItem.tsx` (author name, avatar, timestamp, content per FR-016)
+- [ ] T031 [P] [US2] Build `src/components/chat/MessageComposer.tsx` (send message, optimistic `insertAtTop` per research.md §7)
+- [ ] T032 [P] [US2] Playwright smoke test `tests/e2e/send-message.spec.ts` — two browser contexts, one sends, the other sees it in real time (constitution-mandated minimum)
+- [ ] T033 [P] [US2] `convex-test` tests for `servers.ts` (atomic create) in `tests/unit/servers.test.ts`
+- [ ] T034 [P] [US2] `convex-test` tests for `messages.ts` `send`/`list` (membership authz, author join) in `tests/unit/messages.test.ts`
 
 **Checkpoint**: US1 + US2 functional — core real-time chat loop works
 
@@ -102,12 +103,12 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Owner generates an invite link, a second user opens it and joins, both see each other in the member sidebar with correct status; that second user then leaves voluntarily (spec.md US3).
 
-- [ ] T034 [P] [US3] Create `convex/invites.ts`: `getOrCreateForServer` (idempotent), `regenerate` (invalidates the old code), `consume` (data-model.md Invite regenerate semantics, contracts/convex-api.md invites.ts)
-- [ ] T035 [P] [US3] Create `convex/serverMembers.ts`: `listForServer` (joined with `presence`), `leave` (FR-033, owner excluded — contracts/convex-api.md serverMembers.ts)
-- [ ] T036 [US3] Build an invite-consumption route (e.g. `src/routes/JoinInvitePage.tsx`) that calls `invites.consume` and redirects into the joined server
-- [ ] T037 [P] [US3] Build `src/components/layout/MemberList.tsx` (member sidebar with presence + a "leave server" action for non-owners)
-- [ ] T038 [P] [US3] Add owner-only invite generation/copy/regenerate UI (e.g. in `ServerLayout.tsx` or a settings panel)
-- [ ] T039 [P] [US3] `convex-test` tests for `invites.ts` and `serverMembers.ts` (join, leave, regenerate, owner-cannot-leave authz) in `tests/unit/invites.test.ts`
+- [ ] T035 [P] [US3] Create `convex/invites.ts`: `getOrCreateForServer` (idempotent), `regenerate` (invalidates the old code), `consume` (data-model.md Invite regenerate semantics, contracts/convex-api.md invites.ts)
+- [ ] T036 [P] [US3] Create `convex/serverMembers.ts`: `listForServer` (joined with `presence`), `leave` (FR-033, owner excluded — contracts/convex-api.md serverMembers.ts)
+- [ ] T037 [US3] Build an invite-consumption route (e.g. `src/routes/JoinInvitePage.tsx`) that calls `invites.consume` and redirects into the joined server
+- [ ] T038 [P] [US3] Build `src/components/layout/MemberList.tsx` (member sidebar with presence + a "leave server" action for non-owners)
+- [ ] T039 [P] [US3] Add owner-only invite generation/copy/regenerate UI (e.g. in `ServerLayout.tsx` or a settings panel)
+- [ ] T040 [P] [US3] `convex-test` tests for `invites.ts` and `serverMembers.ts` (join, leave, regenerate, owner-cannot-leave authz) in `tests/unit/invites.test.ts`
 
 **Checkpoint**: US1 + US2 + US3 complete = the full P1 MVP slice, independently demoable
 
@@ -119,13 +120,13 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Edit a message (see "(edited)"), delete another, watch a typing indicator appear/clear, scroll to load older history (spec.md US4).
 
-- [ ] T040 [US4] Extend `convex/messages.ts` with `edit` (sets `editedAt`, author-only) and `remove` (author-only) — FR-017/018/019
-- [ ] T041 [US4] Create `convex/typingIndicators.ts`: `heartbeat`, `listForChannel` (FR-021, research.md §2)
-- [ ] T042 [US4] Add the `sweepStaleTyping` job to `convex/crons.ts` (every 5s, 5s staleness threshold)
-- [ ] T043 [P] [US4] Build `src/components/chat/TypingIndicator.tsx` and wire `MessageComposer.tsx`'s input handler to `typingIndicators.heartbeat`
-- [ ] T044 [P] [US4] Add edit/delete controls to `MessageItem.tsx` for the current user's own messages, plus the "(edited)" marker
-- [ ] T045 [US4] Wire `MessageList.tsx`'s scroll-to-top to `usePaginatedQuery`'s `loadMore` (FR-020, research.md §7)
-- [ ] T046 [P] [US4] `convex-test` tests for `messages.ts` edit/remove authz and `typingIndicators.ts` in `tests/unit/messages-lifecycle.test.ts`
+- [ ] T041 [US4] Extend `convex/messages.ts` with `edit` (sets `editedAt`, author-only) and `remove` (author-only) — FR-017/018/019
+- [ ] T042 [US4] Create `convex/typingIndicators.ts`: `heartbeat`, `listForChannel` (FR-021, research.md §2)
+- [ ] T043 [US4] Add the `sweepStaleTyping` job to `convex/crons.ts` (every 5s, 5s staleness threshold)
+- [ ] T044 [P] [US4] Build `src/components/chat/TypingIndicator.tsx` and wire `MessageComposer.tsx`'s input handler to `typingIndicators.heartbeat`
+- [ ] T045 [P] [US4] Add edit/delete controls to `MessageItem.tsx` for the current user's own messages, plus the "(edited)" marker
+- [ ] T046 [US4] Wire `MessageList.tsx`'s scroll-to-top to `usePaginatedQuery`'s `loadMore` (FR-020, research.md §7)
+- [ ] T047 [P] [US4] `convex-test` tests for `messages.ts` edit/remove authz and `typingIndicators.ts` in `tests/unit/messages-lifecycle.test.ts`
 
 **Checkpoint**: US1–US4 functional
 
@@ -137,9 +138,9 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Owner creates a text and a voice channel, renames one, deletes another; all members see updates immediately and the deleted channel's messages are gone (spec.md US5).
 
-- [ ] T047 [US5] Extend `convex/channels.ts` with `create`, `rename`, `remove` (owner-only; `remove` cascades to delete the channel's `Message` rows and end any active `Call` — data-model.md Channel Cascade, FR-012/013)
-- [ ] T048 [P] [US5] Build `src/components/layout/ChannelSidebar.tsx` (channel list split by text/voice, owner-only create/rename/delete controls)
-- [ ] T049 [P] [US5] `convex-test` tests for `channels.ts` (owner-only authz, cascade delete) in `tests/unit/channels.test.ts`
+- [ ] T048 [US5] Extend `convex/channels.ts` with `create`, `rename`, `remove` (owner-only; `remove` cascades to delete the channel's `Message` rows and end any active `Call` — data-model.md Channel Cascade, FR-012/013)
+- [ ] T049 [P] [US5] Build `src/components/layout/ChannelSidebar.tsx` (channel list split by text/voice, owner-only create/rename/delete controls)
+- [ ] T050 [P] [US5] `convex-test` tests for `channels.ts` (owner-only authz, cascade delete) in `tests/unit/channels.test.ts`
 
 **Checkpoint**: US1–US5 functional
 
@@ -151,11 +152,11 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Two users sharing a server open a DM, exchange messages in real time, edit/delete one (spec.md US6).
 
-- [ ] T050 [P] [US6] Create `convex/directMessageThreads.ts`: `getOrCreateWithUser` (requires a shared server — FR-022), `listForMe` (contracts/convex-api.md)
-- [ ] T051 [P] [US6] Create `convex/directMessages.ts`: `list` (paginated, author-joined same as `messages.ts`), `send`, `edit`, `remove` (FR-023)
-- [ ] T052 [US6] Build `src/routes/DirectMessagePage.tsx` reusing `MessageList`/`MessageComposer` against the DM thread
-- [ ] T053 [P] [US6] Add a DM entry point from `MemberList.tsx` (open/create a DM with a shared-server member)
-- [ ] T054 [P] [US6] `convex-test` tests for `directMessageThreads.ts` and `directMessages.ts` in `tests/unit/direct-messages.test.ts`
+- [ ] T051 [P] [US6] Create `convex/directMessageThreads.ts`: `getOrCreateWithUser` (requires a shared server — FR-022), `listForMe` (contracts/convex-api.md)
+- [ ] T052 [P] [US6] Create `convex/directMessages.ts`: `list` (paginated, author-joined same as `messages.ts`), `send`, `edit`, `remove` (FR-023)
+- [ ] T053 [US6] Build `src/routes/DirectMessagePage.tsx` reusing `MessageList`/`MessageComposer` against the DM thread
+- [ ] T054 [P] [US6] Add a DM entry point from `MemberList.tsx` (open/create a DM with a shared-server member)
+- [ ] T055 [P] [US6] `convex-test` tests for `directMessageThreads.ts` and `directMessages.ts` in `tests/unit/direct-messages.test.ts`
 
 **Checkpoint**: US1–US6 functional
 
@@ -167,19 +168,19 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Two members join the same voice channel, confirm audio/video both ways, toggle mic/camera and see it reflected, confirm the channel list shows both connected, then start a 1-on-1 call from a DM (spec.md US7).
 
-- [ ] T055 [US7] Create `convex/calls.ts`: `getOrCreateForChannel`, `getOrCreateForThread`, `join` (4-participant cap — FR-025), `leave`, `setMicCamera`, `listParticipants`, `listActiveForServer` (contracts/convex-api.md calls.ts)
-- [ ] T056 [US7] Create `convex/signals.ts`: `send`, `listForMe`, `ack` (contracts/convex-api.md signals.ts — ack only after successful apply, research.md §3)
-- [ ] T057 [US7] Add the `sweepOrphanedSignals` job to `convex/crons.ts` (every 60s, 5-minute age cutoff)
-- [ ] T058 [US7] Build `src/features/calls/useWebRtcCall.ts`: the peer-connection registry (`Map<userId, PeerState>`), dual creation triggers (proactive from `listParticipants`, lazy from an unrecognized `signals.listForMe` sender), the perfect-negotiation handlers, `onicecandidate` wiring, and teardown on departure (research.md §3)
-- [ ] T059 [US7] Add ICE restart handling to `useWebRtcCall.ts`: `connectionstatechange` → `restartIce()` on `"failed"`, debounced on `"disconnected"` (research.md §4)
-- [ ] T060 [P] [US7] Build `src/features/calls/useSpeakingDetection.ts`: client-local Web Audio `AnalyserNode`-based speaking detection per track, never round-tripped through Convex (research.md §5, FR-028)
-- [ ] T061 [P] [US7] Build `src/components/call/VideoTile.tsx` (renders a participant's video, mute state from `CallParticipant.micOn`, speaking state from T060) and `CallGrid.tsx`
-- [ ] T062 [P] [US7] Build `src/components/call/CallControls.tsx` (mic/camera toggle → `calls.setMicCamera` + local track `enabled`, leave → `calls.leave`)
-- [ ] T063 [US7] Build `src/routes/VoiceChannelPage.tsx` wiring `useWebRtcCall` + `CallGrid` + `CallControls` for a voice channel
-- [ ] T064 [P] [US7] Wire `calls.listActiveForServer` into `ChannelSidebar.tsx` to show who's connected to each voice channel (FR-030)
-- [ ] T065 [P] [US7] Add a "start video call" entry point to `DirectMessagePage.tsx` using `calls.getOrCreateForThread` (FR-031)
-- [ ] T066 [P] [US7] Playwright smoke test `tests/e2e/join-call.spec.ts` — two contexts with `--use-fake-device-for-media-stream`, join the same voice channel, assert both see a connected remote video tile (constitution-mandated minimum)
-- [ ] T067 [P] [US7] `convex-test` tests for `calls.ts` (4-participant cap, authz) and `signals.ts` in `tests/unit/calls.test.ts`
+- [ ] T056 [US7] Create `convex/calls.ts`: `getOrCreateForChannel`, `getOrCreateForThread`, `join` (4-participant cap — FR-025), `leave`, `setMicCamera`, `listParticipants`, `listActiveForServer` (contracts/convex-api.md calls.ts)
+- [ ] T057 [US7] Create `convex/signals.ts`: `send`, `listForMe`, `ack` (contracts/convex-api.md signals.ts — ack only after successful apply, research.md §3)
+- [ ] T058 [US7] Add the `sweepOrphanedSignals` job to `convex/crons.ts` (every 60s, 5-minute age cutoff)
+- [ ] T059 [US7] Build `src/features/calls/useWebRtcCall.ts`: the peer-connection registry (`Map<userId, PeerState>`), dual creation triggers (proactive from `listParticipants`, lazy from an unrecognized `signals.listForMe` sender), the perfect-negotiation handlers, `onicecandidate` wiring, and teardown on departure (research.md §3)
+- [ ] T060 [US7] Add ICE restart handling to `useWebRtcCall.ts`: `connectionstatechange` → `restartIce()` on `"failed"`, debounced on `"disconnected"` (research.md §4)
+- [ ] T061 [P] [US7] Build `src/features/calls/useSpeakingDetection.ts`: client-local Web Audio `AnalyserNode`-based speaking detection per track, never round-tripped through Convex (research.md §5, FR-028)
+- [ ] T062 [P] [US7] Build `src/components/call/VideoTile.tsx` (renders a participant's video, mute state from `CallParticipant.micOn`, speaking state from T061) and `CallGrid.tsx`
+- [ ] T063 [P] [US7] Build `src/components/call/CallControls.tsx` (mic/camera toggle → `calls.setMicCamera` + local track `enabled`, leave → `calls.leave`)
+- [ ] T064 [US7] Build `src/routes/VoiceChannelPage.tsx` wiring `useWebRtcCall` + `CallGrid` + `CallControls` for a voice channel, including a "this channel is full" error state when `calls.join` rejects at the 4-participant cap (FR-025 AC7)
+- [ ] T065 [P] [US7] Wire `calls.listActiveForServer` into `ChannelSidebar.tsx` to show who's connected to each voice channel (FR-030)
+- [ ] T066 [P] [US7] Add a "start video call" entry point to `DirectMessagePage.tsx` using `calls.getOrCreateForThread` (FR-031)
+- [ ] T067 [P] [US7] Playwright smoke test `tests/e2e/join-call.spec.ts` — two contexts with `--use-fake-device-for-media-stream`, join the same voice channel, assert both see a connected remote video tile (constitution-mandated minimum)
+- [ ] T068 [P] [US7] `convex-test` tests for `calls.ts` (4-participant cap, authz) and `signals.ts` in `tests/unit/calls.test.ts`
 
 **Checkpoint**: US1–US7 functional — the full non-admin feature set works
 
@@ -191,9 +192,9 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Owner renames the server and removes a member; all members see the new name, the removed member immediately loses access (spec.md US8).
 
-- [ ] T068 [US8] Extend `convex/serverMembers.ts` with `remove` (owner-only, cannot target the owner — FR-010)
-- [ ] T069 [P] [US8] Add owner-only rename-server and remove-member controls to `ServerLayout.tsx`/`MemberList.tsx` (`servers.rename` already exists from US2)
-- [ ] T070 [P] [US8] `convex-test` tests for `serverMembers.remove` authz in `tests/unit/server-admin.test.ts`
+- [ ] T069 [US8] Extend `convex/serverMembers.ts` with `remove` (owner-only, cannot target the owner — FR-010)
+- [ ] T070 [P] [US8] Add owner-only rename-server and remove-member controls to `ServerLayout.tsx`/`MemberList.tsx` (`servers.rename` already exists from US2)
+- [ ] T071 [P] [US8] `convex-test` tests for `serverMembers.remove` authz in `tests/unit/server-admin.test.ts`
 
 **Checkpoint**: All 8 user stories independently functional
 
@@ -201,9 +202,9 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 ## Phase 11: Polish & Cross-Cutting Concerns
 
-- [ ] T071 [P] Run every quickstart.md validation scenario end-to-end manually across two browser profiles
-- [ ] T072 [P] Confirm `tsc --noEmit` passes with zero errors across `src/` and `convex/` (constitution: Type Safety End-to-End)
-- [ ] T073 Review every function in `convex/*.ts` against contracts/convex-api.md's auth-rule column for 1:1 compliance (constitution: Security Basics gate)
+- [ ] T072 [P] Run every quickstart.md validation scenario end-to-end manually across two browser profiles
+- [ ] T073 [P] Confirm `tsc --noEmit` passes with zero errors across `src/` and `convex/` (constitution: Type Safety End-to-End)
+- [ ] T074 Review every function in `convex/*.ts` against contracts/convex-api.md's auth-rule column for 1:1 compliance (constitution: Security Basics gate)
 
 ---
 
@@ -229,14 +230,14 @@ Delivery mapping — the app builds and runs after every phase.
 - All [P]-marked Setup tasks (T003–T008) run in parallel.
 - Within Foundational, T011–T014 run in parallel once T009/T010 land.
 - Once Foundational is done, if staffed by multiple people, US1/US2/US3 can be split across developers — but note the servers→serverMembers ordering above if doing so.
-- Within any story, [P] tasks touch different files and can run together (e.g., T029/T030 in US2; T061/T062 in US7).
+- Within any story, [P] tasks touch different files and can run together (e.g., T030/T031 in US2; T062/T063 in US7).
 
 ---
 
 ## Parallel Example: User Story 2
 
 ```bash
-# After T024 (servers.ts) and T026 (messages.ts) land, these can run together:
+# After T025 (servers.ts) and T027 (messages.ts) land, these can run together:
 Task: "Build src/components/chat/MessageList.tsx and MessageItem.tsx"
 Task: "Build src/components/chat/MessageComposer.tsx"
 Task: "Playwright smoke test tests/e2e/send-message.spec.ts"
@@ -273,6 +274,6 @@ between checkpoints.
 
 - [P] tasks touch different files with no same-phase dependency.
 - [Story] labels map every task back to spec.md's US1–US8 for traceability.
-- The two constitution-mandated Playwright smoke tests are T031 (send-message) and T066 (join-call) — don't drop these even if other test tasks are deprioritized.
+- The two constitution-mandated Playwright smoke tests are T032 (send-message) and T067 (join-call) — don't drop these even if other test tasks are deprioritized.
 - Commit after each task or logical group; don't leave `main` in a non-building state between checkpoints (constitution: Incremental Delivery).
 - Avoid: same-file conflicts within a single phase, and starting US7 before US5/US6 land.

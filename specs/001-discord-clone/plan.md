@@ -133,6 +133,8 @@ src/
 ├── routes/
 │   ├── LoginPage.tsx
 │   ├── SignupPage.tsx
+│   ├── Home.tsx                 # authenticated landing: own profile + online indicator + profile editing
+│   ├── JoinInvitePage.tsx       # consumes an invite code (invites.consume) and redirects into the server
 │   ├── ServerLayout.tsx         # server rail + channel sidebar + member list shell
 │   ├── ChannelPage.tsx          # text channel chat pane
 │   ├── VoiceChannelPage.tsx     # voice/video call UI for a voice channel
@@ -142,13 +144,14 @@ src/
 │   ├── chat/                    # MessageList, MessageItem, MessageComposer, TypingIndicator
 │   └── call/                    # CallGrid, VideoTile, CallControls
 ├── features/                    # non-UI logic, separated per Testable Seams — only created where
-│   └── calls/                   # genuine non-UI logic exists (Simplicity First); calls/useWebRtcCall
-│                                 # (RTCPeerConnection + signaling orchestration, research.md §3) is the
-│                                 # one hook complex enough to need this now. Add auth/servers/messages/
-│                                 # siblings later only if their own logic actually grows past a thin
-│                                 # useQuery/useMutation wrapper — don't pre-create them speculatively.
+│   └── calls/                   # genuine non-UI logic exists (Simplicity First); useWebRtcCall.ts and
+│                                 # useSpeakingDetection.ts (research.md §3, §5) are the two hooks complex
+│                                 # enough to need this now. Add auth/servers/messages/ siblings later only
+│                                 # if their own logic actually grows past a thin useQuery/useMutation
+│                                 # wrapper — don't pre-create them speculatively.
 ├── lib/
-│   └── convexClient.ts
+│   ├── convexClient.ts
+│   └── usePresenceHeartbeat.ts  # recurring presence.heartbeat + clearMine on sign-out (research.md §2)
 └── styles/
     └── index.css                # Tailwind entry + dark theme tokens
 

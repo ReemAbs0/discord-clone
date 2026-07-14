@@ -100,6 +100,10 @@ and join-call scenarios per the constitution's minimum testing bar.
 8. **Expect**: the other party is invited into a live call the same way.
 9. **Known limitation**: on a strict/symmetric-NAT network, steps 2–3 may fail to connect since v1 uses
    STUN only, no TURN (research.md §4) — this is expected, not a bug, for such networks.
+10. **SC-006 verification note**: the ≥95%-success/≥15-minute reliability bar is validated manually by
+    repeating steps 1–3 across several call attempts and network conditions, not by automated load
+    testing — building dedicated reliability-measurement infrastructure was judged disproportionate to
+    a student-project v1 (Simplicity First). Revisit if real usage surfaces call-drop complaints.
 
 ### 8. Server administration (US8)
 
