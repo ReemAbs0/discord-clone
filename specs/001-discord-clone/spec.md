@@ -8,11 +8,20 @@
 
 **Input**: User description: "Build a real-time chat and video calling application modeled on Discord. Users & auth: Users sign up and log in. Each user has a display name and avatar. A user's online/offline status is visible to others. Servers: A logged-in user can create a server (a named community with an optional image). The creator becomes its owner. Users join servers via an invite link the owner can generate. A server lists its members and their online status in a sidebar. Owners can rename the server and remove members. Channels: Every server starts with a default \"general\" text channel. Members can see all channels; the owner can create, rename, and delete text channels and voice channels. Deleting a channel removes its messages. Messaging: Inside a text channel, members send text messages. Messages appear for all members in real time without refreshing. Each message shows author name, avatar, timestamp, and content. Authors can edit and delete their own messages; edits are marked. Messages load newest-first with infinite scroll for history. Typing indicators show when someone is composing. Direct messages: Any user can open a 1-on-1 DM conversation with another member of a shared server. DMs behave like channels (real time, edit, delete). Voice/video calls: A member can join a voice channel, which starts or joins a live call with the other members currently in that channel (support at least 2, target up to 4 participants). Participants can toggle their microphone and camera, see each other's video tiles, see who is speaking/muted, and leave the call. The channel list shows who is currently connected to each voice channel. 1-on-1 video calls can also be started from a DM. Out of scope for v1: message attachments/files, reactions, threads, roles/permissions beyond owner vs member, screen sharing, mobile apps, message search."
 
+## Clarifications
+
+### Session 2026-07-14
+
+- Q: What uniquely identifies a user account for login, separate from the display name? → A: Email + password; the display name remains a separate, non-unique public profile name.
+- Q: Should a non-owner member be able to voluntarily leave a server on their own? → A: Yes — members can leave a server at any time on their own, distinct from the owner removing them.
+- Q: What's the concrete max delay per page when loading older message history via infinite scroll? → A: Under 1 second per page.
+- Q: What's the concrete reliability/duration target for voice/video calls? → A: At least 95% of call attempts connect and remain stable for at least 15 minutes, with up to 4 participants.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Sign Up, Log In & Presence (Priority: P1)
 
-A new user creates an account with a display name and avatar, logs in, and can see that they now show up to others as "online." When they close the app or log out, others see them as "offline."
+A new user creates an account with an email, password, display name, and avatar, logs in, and can see that they now show up to others as "online." When they close the app or log out, others see them as "offline."
 
 **Why this priority**: Nothing else in the system is reachable without an identity. This is the foundation every other story depends on.
 
@@ -20,8 +29,8 @@ A new user creates an account with a display name and avatar, logs in, and can s
 
 **Acceptance Scenarios**:
 
-1. **Given** no existing account, **When** a person signs up with a display name and (optionally) an avatar, **Then** an account is created and they are logged in.
-2. **Given** a registered user, **When** they log in with valid credentials, **Then** they reach the main application view.
+1. **Given** no existing account, **When** a person signs up with a unique email, a password, a display name, and (optionally) an avatar, **Then** an account is created and they are logged in.
+2. **Given** a registered user, **When** they log in with their email and password, **Then** they reach the main application view.
 3. **Given** a logged-in user, **When** another user views a list that includes them, **Then** that user appears with an "online" indicator.
 4. **Given** an online user, **When** they log out or their session ends, **Then** other users see their status change to "offline."
 
@@ -56,6 +65,7 @@ The server owner generates an invite link and shares it. Another user opens the 
 1. **Given** a server owner, **When** they request an invite link, **Then** a link is generated that can be shared with others.
 2. **Given** a valid invite link, **When** a logged-in user opens it, **Then** they become a member of that server and can see its channels.
 3. **Given** a server with multiple members, **When** any member views the server, **Then** they see a sidebar listing all members and each one's online/offline status.
+4. **Given** a non-owner member of a server, **When** they choose to leave that server, **Then** their membership ends immediately and they lose access to its channels and calls, without requiring the owner to remove them.
 
 ---
 
@@ -160,7 +170,7 @@ The server owner keeps the community in order by renaming the server and removin
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow a person to sign up with a display name, and MUST support subsequent logins to the same account.
+- **FR-001**: System MUST allow a person to sign up with a unique email address, a password, and a display name, and MUST support subsequent logins to the same account via that email and password. The display name is separate from the login email and is not required to be unique.
 - **FR-002**: System MUST allow a user to set/change an avatar image for their account.
 - **FR-003**: System MUST track and display each user's online/offline status to other users, updating it when they log in, log out, or their session ends.
 - **FR-004**: System MUST allow a logged-in user to create a server with a name and an optional image, making that user the server's owner.
@@ -192,10 +202,11 @@ The server owner keeps the community in order by renaming the server and removin
 - **FR-030**: System MUST show, in the channel list, which members are currently connected to each voice channel.
 - **FR-031**: System MUST allow a user to start a 1-on-1 video call directly from a DM conversation with another user.
 - **FR-032**: System MUST restrict server, channel-management, member-removal, and server-rename actions to the server's owner; all other members MUST be limited to member-level actions (viewing, messaging, joining channels/calls).
+- **FR-033**: System MUST allow a non-owner member to voluntarily leave a server at any time, immediately ending their membership and access to its channels and calls.
 
 ### Key Entities
 
-- **User**: A person with an account; has a display name, an avatar, credentials, and an online/offline status visible to others.
+- **User**: A person with an account; has a unique email and password used for login, a separate display name and avatar (neither required to be unique), and an online/offline status visible to others.
 - **Server**: A named community, optionally with an image, created and owned by one user; contains channels and members.
 - **Membership**: The relationship between a user and a server they belong to, including whether that user is the server's owner.
 - **Invite**: A shareable link tied to a server that grants a user membership in that server when opened.
@@ -212,14 +223,15 @@ The server owner keeps the community in order by renaming the server and removin
 - **SC-002**: A message sent by one member becomes visible to other members actively viewing the same channel within 1 second, without any manual refresh.
 - **SC-003**: A person who receives an invite link can join the server and see its channels within 30 seconds of opening the link.
 - **SC-004**: Online/offline status changes are reflected to other users within 5 seconds of the change occurring.
-- **SC-005**: Members can load older message history via scrolling with no more than a brief, unobtrusive delay per page of history (perceived as instant by users in informal testing).
-- **SC-006**: Two to four participants can be simultaneously connected to a voice channel call with working audio, video, mute, and camera toggling for the full duration of the call.
+- **SC-005**: Members can load an additional page of older message history via scrolling in under 1 second.
+- **SC-006**: At least 95% of voice/video call attempts (2 to 4 participants) successfully connect and remain stable — with audio, video, mute, and camera toggling all continuing to work — for at least 15 minutes.
 - **SC-007**: 90% of first-time users can, without external help, find and start a direct message with someone they share a server with.
 - **SC-008**: Channel and server management changes (create/rename/delete channel, rename server, remove member) made by an owner are visible to all other members within 5 seconds.
 
 ## Assumptions
 
-- Authentication is standard credential-based sign-up/login (e.g., display name plus a password or equivalent credential); no third-party single-sign-on is required for v1.
+- Authentication uses a unique email address plus a password as the login credential; the display name is a separate, non-unique public-facing name. No third-party single-sign-on is required for v1.
+- Since ownership transfer and server deletion are not required for v1, the "leave server" capability (FR-033) applies only to non-owner members; a server's owner cannot leave their own server in v1 (they would need to remove all other members and simply stop using the server, or this is addressed in a future version).
 - Invite links are reusable and do not expire on their own; the owner can generate a new link at any time, but explicit link revocation/expiration management is not required for v1.
 - Removing a member from a server does not ban them from it; since roles/permissions beyond owner vs. member are out of scope, there is no ban list, so a removed member could rejoin later via a valid invite link.
 - A voice channel call enforces a hard cap of 4 simultaneous participants; a member attempting to join a full call is blocked with a "channel full" style message rather than being queued.

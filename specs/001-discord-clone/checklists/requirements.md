@@ -15,7 +15,7 @@
 
 - [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
-- [ ] Success criteria are measurable
+- [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
 - [x] All acceptance scenarios are defined
 - [x] Edge cases are identified
@@ -32,16 +32,17 @@
 ## Notes
 
 - No unresolved [NEEDS CLARIFICATION] markers — ambiguous points (invite link lifetime, message
-  deletion behavior, voice-channel capacity handling, ownership transfer, DM persistence) were
-  resolved with documented, reasonable defaults in the Assumptions section instead.
-- **Unmet — Success criteria are measurable**: SC-005 ("no more than a brief, unobtrusive delay...
-  perceived as instant by users in informal testing") and SC-006 ("working... for the full duration
-  of the call") use subjective, non-numeric language, unlike SC-001–SC-004/SC-007/SC-008 which all
-  have concrete targets (a time bound or a percentage). Needs a hard number (e.g., a max load time
-  in seconds for SC-005; a success-rate or minimum duration threshold for SC-006).
-- **Unmet — All functional requirements have clear acceptance criteria**: FR-002 ("System MUST allow
-  a user to set/change an avatar image for their account") only has acceptance-scenario coverage for
-  setting an avatar at sign-up (US1, Acceptance Scenario 1). There is no Given/When/Then scenario for
-  a user changing their avatar after their account already exists.
-- Ready for `/speckit-clarify` (recommended, to tighten SC-005/SC-006 and add the missing avatar-change
-  scenario) or `/speckit-plan` if these two gaps are acceptable to defer.
+  deletion behavior, voice-channel capacity handling, ownership transfer, DM persistence, login
+  identity, leave-server capability, history-load latency, call reliability) were resolved via the
+  2026-07-14 clarification session or documented as reasonable defaults in Assumptions.
+- **Resolved (2026-07-14 clarification session) — Success criteria are measurable**: SC-005 now
+  reads "under 1 second per page" and SC-006 now reads "at least 95% of call attempts... stable for
+  at least 15 minutes," replacing the prior subjective wording.
+- **Still unmet — All functional requirements have clear acceptance criteria**: FR-002 ("System MUST
+  allow a user to set/change an avatar image for their account") only has acceptance-scenario coverage
+  for setting an avatar at sign-up (US1, Acceptance Scenario 1). There is still no Given/When/Then
+  scenario for a user changing their avatar after their account already exists. This wasn't in scope
+  of the clarification session's question quota (it's a missing test scenario, not a decision point)
+  and needs a direct spec edit.
+- Ready for `/speckit-plan`. Consider adding the missing avatar-change acceptance scenario to US1
+  first, or accept the gap and address it during `/speckit-tasks`/implementation.
