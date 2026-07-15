@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAuthUserId } from "./lib/authz";
+import { PRESENCE_STALE_AFTER_MS } from "./lib/constants";
 
 export const heartbeat = mutation({
   args: {},
@@ -36,8 +37,6 @@ export const clearMine = mutation({
   },
 });
 
-const STALE_AFTER_MS = 30_000;
-
 export const getForUsers = query({
   args: { userIds: v.array(v.id("users")) },
   handler: async (ctx, { userIds }) => {
@@ -49,7 +48,7 @@ export const getForUsers = query({
           .query("presence")
           .withIndex("by_user", (q) => q.eq("userId", userId))
           .unique();
-        const online = row !== null && now - row.lastActiveAt < STALE_AFTER_MS;
+        const online = row !== null && now - row.lastActiveAt < PRESENCE_STALE_AFTER_MS;
         return { userId, online };
       }),
     );

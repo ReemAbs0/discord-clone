@@ -5,6 +5,7 @@ import LoginPage from "./routes/LoginPage";
 import SignupPage from "./routes/SignupPage";
 import AppShell from "./routes/AppShell";
 import Home from "./routes/Home";
+import JoinInvitePage from "./routes/JoinInvitePage";
 import ServerLayout, { ServerIndexRedirect } from "./routes/ServerLayout";
 import ChannelPage from "./routes/ChannelPage";
 
@@ -35,6 +36,16 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+
+      {/* Transient join-then-redirect page — authed, but outside the shell. */}
+      <Route
+        path="/invite/:code"
+        element={
+          <RequireAuth>
+            <JoinInvitePage />
+          </RequireAuth>
+        }
+      />
 
       {/* All authenticated routes render inside the persistent app shell
           (server rail + main pane), wrapped once in the auth gate. */}

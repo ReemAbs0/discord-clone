@@ -103,12 +103,12 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Owner generates an invite link, a second user opens it and joins, both see each other in the member sidebar with correct status; that second user then leaves voluntarily (spec.md US3).
 
-- [ ] T035 [P] [US3] Create `convex/invites.ts`: `getOrCreateForServer` (idempotent), `regenerate` (invalidates the old code), `consume` (data-model.md Invite regenerate semantics, contracts/convex-api.md invites.ts)
-- [ ] T036 [P] [US3] Create `convex/serverMembers.ts`: `listForServer` (joined with `presence`), `leave` (FR-033, owner excluded — contracts/convex-api.md serverMembers.ts)
-- [ ] T037 [US3] Build an invite-consumption route (e.g. `src/routes/JoinInvitePage.tsx`) that calls `invites.consume` and redirects into the joined server
-- [ ] T038 [P] [US3] Build `src/components/layout/MemberList.tsx` (member sidebar with presence + a "leave server" action for non-owners)
-- [ ] T039 [P] [US3] Add owner-only invite generation/copy/regenerate UI (e.g. in `ServerLayout.tsx` or a settings panel)
-- [ ] T040 [P] [US3] `convex-test` tests for `invites.ts` and `serverMembers.ts` (join, leave, regenerate, owner-cannot-leave authz) in `tests/unit/invites.test.ts`
+- [X] T035 [P] [US3] Create `convex/invites.ts`: `getOrCreateForServer` (idempotent), `regenerate` (invalidates the old code), `consume` (data-model.md Invite regenerate semantics, contracts/convex-api.md invites.ts)
+- [X] T036 [P] [US3] Create `convex/serverMembers.ts`: `listForServer` (joined with `presence`), `leave` (FR-033, owner excluded — contracts/convex-api.md serverMembers.ts)
+- [X] T037 [US3] Build an invite-consumption route (e.g. `src/routes/JoinInvitePage.tsx`) that calls `invites.consume` and redirects into the joined server
+- [X] T038 [P] [US3] Build `src/components/layout/MemberList.tsx` (member sidebar with presence + a "leave server" action for non-owners)
+- [X] T039 [P] [US3] Add owner-only invite generation/copy/regenerate UI (e.g. in `ServerLayout.tsx` or a settings panel)
+- [X] T040 [P] [US3] `convex-test` tests for `invites.ts` and `serverMembers.ts` (join, leave, regenerate, owner-cannot-leave authz) in `tests/unit/invites.test.ts`
 
 **Checkpoint**: US1 + US2 + US3 complete = the full P1 MVP slice, independently demoable
 

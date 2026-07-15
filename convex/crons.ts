@@ -1,6 +1,7 @@
 import { cronJobs } from "convex/server";
 import { internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { PRESENCE_STALE_AFTER_MS } from "./lib/constants";
 
 const crons = cronJobs();
 
@@ -8,7 +9,6 @@ const crons = cronJobs();
 // update to every subscriber — the "went offline" transition for a client
 // that vanished without a clean sign-out is delivered the same way a message
 // is, not via any client-side polling.
-const PRESENCE_STALE_AFTER_MS = 30_000;
 
 export const sweepStalePresence = internalMutation({
   args: {},
