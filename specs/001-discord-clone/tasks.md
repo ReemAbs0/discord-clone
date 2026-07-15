@@ -138,9 +138,9 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Owner creates a text and a voice channel, renames one, deletes another; all members see updates immediately and the deleted channel's messages are gone (spec.md US5).
 
-- [ ] T048 [US5] Extend `convex/channels.ts` with `create`, `rename`, `remove` (owner-only; `remove` cascades to delete the channel's `Message` rows and end any active `Call` — data-model.md Channel Cascade, FR-012/013)
-- [ ] T049 [P] [US5] Build `src/components/layout/ChannelSidebar.tsx` (channel list split by text/voice, owner-only create/rename/delete controls)
-- [ ] T050 [P] [US5] `convex-test` tests for `channels.ts` (owner-only authz, cascade delete) in `tests/unit/channels.test.ts`
+- [X] T048 [US5] Extend `convex/channels.ts` with `create`, `rename`, `remove` (owner-only; `remove` cascades to delete the channel's `Message` rows and end any active `Call` — data-model.md Channel Cascade, FR-012/013)
+- [X] T049 [P] [US5] Build `src/components/layout/ChannelSidebar.tsx` (channel list split by text/voice, owner-only create/rename/delete controls)
+- [X] T050 [P] [US5] `convex-test` tests for `channels.ts` (owner-only authz, cascade delete) in `tests/unit/channels.test.ts`
 
 **Checkpoint**: US1–US5 functional
 

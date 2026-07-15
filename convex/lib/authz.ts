@@ -39,6 +39,15 @@ export async function requireChannelMember(ctx: Ctx, channelId: Id<"channels">) 
   return { userId, channel };
 }
 
+// Owner-level channel actions (rename/delete) — resolves the channel's server
+// then requires ownership of it.
+export async function requireChannelOwner(ctx: Ctx, channelId: Id<"channels">) {
+  const channel = await ctx.db.get(channelId);
+  if (channel === null) throw new Error("Channel not found");
+  const { userId, server } = await requireServerOwner(ctx, channel.serverId);
+  return { userId, channel, server };
+}
+
 export async function requireAuthor<T extends { authorId: Id<"users"> }>(
   ctx: Ctx,
   doc: T,
