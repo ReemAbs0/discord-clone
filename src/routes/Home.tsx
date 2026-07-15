@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useSignOut } from "../lib/usePresenceHeartbeat";
@@ -33,6 +34,8 @@ export default function Home() {
         Pick a server from the rail on the left, or create one with the + button to start chatting.
       </p>
 
+      <DirectMessageList />
+
       {me === undefined ? (
         <p className="text-content-muted">Loading…</p>
       ) : me === null ? (
@@ -46,6 +49,30 @@ export default function Home() {
       )}
 
       <ProfileEditor />
+    </div>
+  );
+}
+
+function DirectMessageList() {
+  const threads = useQuery(api.directMessageThreads.listForMe, {});
+  if (threads === undefined || threads.length === 0) return null;
+
+  return (
+    <div className="space-y-1 rounded-lg bg-surface-base p-4">
+      <h2 className="mb-1 text-sm font-bold uppercase text-content-muted">Conversations</h2>
+      <ul>
+        {threads.map((thread) => (
+          <li key={thread._id}>
+            <Link
+              to={`/dm/${thread._id}`}
+              className="flex items-center gap-2 rounded px-2 py-1.5 text-content-primary hover:bg-surface-hover"
+            >
+              <Avatar name={thread.otherUser.name} avatarUrl={thread.otherUser.avatarUrl} size={28} />
+              <span className="truncate">{thread.otherUser.name}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

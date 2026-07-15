@@ -1,36 +1,41 @@
 import { useLayoutEffect, useRef } from "react";
-import { usePaginatedQuery, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import MessageItem from "./MessageItem";
+import MessageItem, { type ChatMessage } from "./MessageItem";
 
+type PaginationStatus = "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
 const PAGE_SIZE = 25;
 
-export default function MessageList({ channelId }: { channelId: Id<"channels"> }) {
-  const me = useQuery(api.users.getMe);
-  const { results, status, loadMore } = usePaginatedQuery(
-    api.messages.list,
-    { channelId },
-    { initialNumItems: PAGE_SIZE },
-  );
-
-  // `results` accumulates newest-first across pages (research.md §7) — reverse
-  // once so the chat reads oldest-at-top, newest-at-bottom.
+// Presentational: receives the paginated result pieces from whichever query the
+// parent ran (api.messages.list or api.directMessages.list), so the scroll /
+// load-older-history behaviour is written once and shared (FR-020, research §7).
+export default function MessageList({
+  results,
+  status,
+  loadMore,
+  currentUserId,
+  onEdit,
+  onDelete,
+}: {
+  results: ChatMessage[];
+  status: PaginationStatus;
+  loadMore: (numItems: number) => void;
+  currentUserId: Id<"users"> | null;
+  onEdit: (id: string, content: string) => Promise<unknown> | void;
+  onDelete: (id: string) => Promise<unknown> | void;
+}) {
+  // `results` accumulates newest-first across pages — reverse once so the chat
+  // reads oldest-at-top, newest-at-bottom.
   const orderedForDisplay = [...results].reverse();
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Set just before a loadMore so the layout effect can keep the viewport
-  // anchored to the same message instead of jumping (FR-020 infinite scroll).
   const restoreScrollHeightRef = useRef<number | null>(null);
-  // Whether the viewport is pinned to the bottom (so new incoming messages
-  // auto-scroll, but scrolling up to read history does not get yanked down).
   const stickToBottomRef = useRef(true);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     if (restoreScrollHeightRef.current !== null) {
-      // Older history was just prepended — keep the same content in view.
+      // Older history just prepended — keep the same content in view.
       el.scrollTop = el.scrollHeight - restoreScrollHeightRef.current;
       restoreScrollHeightRef.current = null;
     } else if (stickToBottomRef.current) {
@@ -61,7 +66,13 @@ export default function MessageList({ channelId }: { channelId: Id<"channels"> }
         <p className="px-4 py-2 text-content-muted">No messages yet — say hello!</p>
       )}
       {orderedForDisplay.map((message) => (
-        <MessageItem key={message._id} message={message} currentUserId={me?.id ?? null} />
+        <MessageItem
+          key={message._id}
+          message={message}
+          canModify={currentUserId !== null && message.authorId === currentUserId}
+          onEdit={(content) => onEdit(message._id, content)}
+          onDelete={() => onDelete(message._id)}
+        />
       ))}
     </div>
   );

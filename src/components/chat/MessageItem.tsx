@@ -1,10 +1,11 @@
 import { useState, type KeyboardEvent } from "react";
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import Avatar from "../Avatar";
 
-export type MessageItemData = {
+// Shared shape rendered by MessageList for both channel messages and DMs. `_id`
+// is widened to string so one presentational component serves both (the parent
+// owns the concretely-typed Convex hooks — see ChannelPage / DirectMessagePage).
+export type ChatMessage = {
   _id: string;
   authorId: Id<"users">;
   content: string;
@@ -23,23 +24,22 @@ function formatTimestamp(ms: number) {
     : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
-// `currentUserId` is null while the viewer's profile is still loading — until
-// then no message shows author controls, which is correct (FR-019: only the
-// author may edit/delete).
+// Presentational: the parent supplies `canModify` (author check) and the
+// edit/delete callbacks bound to the right mutation. FR-019 is still enforced
+// server-side regardless of this flag.
 export default function MessageItem({
   message,
-  currentUserId,
+  canModify,
+  onEdit,
+  onDelete,
 }: {
-  message: MessageItemData;
-  currentUserId: Id<"users"> | null;
+  message: ChatMessage;
+  canModify: boolean;
+  onEdit: (content: string) => Promise<unknown> | void;
+  onDelete: () => Promise<unknown> | void;
 }) {
-  const editMessage = useMutation(api.messages.edit);
-  const removeMessage = useMutation(api.messages.remove);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
-
-  const isAuthor = currentUserId !== null && message.authorId === currentUserId;
-  const messageId = message._id as Id<"messages">;
 
   async function saveEdit() {
     const trimmed = draft.trim();
@@ -47,7 +47,7 @@ export default function MessageItem({
       setEditing(false);
       return;
     }
-    await editMessage({ messageId, content: trimmed });
+    await onEdit(trimmed);
     setEditing(false);
   }
 
@@ -63,7 +63,7 @@ export default function MessageItem({
 
   async function handleDelete() {
     if (!window.confirm("Delete this message?")) return;
-    await removeMessage({ messageId });
+    await onDelete();
   }
 
   return (
@@ -104,7 +104,7 @@ export default function MessageItem({
         )}
       </div>
 
-      {isAuthor && !editing && (
+      {canModify && !editing && (
         <div className="absolute right-4 top-0 hidden gap-1 rounded bg-surface-deepest p-1 group-hover:flex">
           <button
             onClick={() => {

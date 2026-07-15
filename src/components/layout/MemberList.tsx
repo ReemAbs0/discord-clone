@@ -17,6 +17,7 @@ export default function MemberList({ serverId }: { serverId: Id<"servers"> }) {
   const members = useQuery(api.serverMembers.listForServer, { serverId });
   const me = useQuery(api.users.getMe);
   const leave = useMutation(api.serverMembers.leave);
+  const openDm = useMutation(api.directMessageThreads.getOrCreateWithUser);
   const navigate = useNavigate();
 
   const myRow = members?.find((m) => m.userId === me?.id);
@@ -25,6 +26,11 @@ export default function MemberList({ serverId }: { serverId: Id<"servers"> }) {
   async function handleLeave() {
     await leave({ serverId });
     navigate("/", { replace: true });
+  }
+
+  async function handleOpenDm(otherUserId: Id<"users">) {
+    const threadId = await openDm({ otherUserId });
+    navigate(`/dm/${threadId}`);
   }
 
   const online = members?.filter((m) => m.online) ?? [];
@@ -37,8 +43,19 @@ export default function MemberList({ serverId }: { serverId: Id<"servers"> }) {
           <p className="text-sm text-content-muted">Loading members…</p>
         ) : (
           <>
-            <MemberGroup label={`Online — ${online.length}`} members={online} />
-            <MemberGroup label={`Offline — ${offline.length}`} members={offline} dim />
+            <MemberGroup
+              label={`Online — ${online.length}`}
+              members={online}
+              currentUserId={me?.id ?? null}
+              onOpenDm={handleOpenDm}
+            />
+            <MemberGroup
+              label={`Offline — ${offline.length}`}
+              members={offline}
+              currentUserId={me?.id ?? null}
+              onOpenDm={handleOpenDm}
+              dim
+            />
           </>
         )}
       </div>
@@ -54,33 +71,57 @@ export default function MemberList({ serverId }: { serverId: Id<"servers"> }) {
   );
 }
 
-function MemberGroup({ label, members, dim }: { label: string; members: Member[]; dim?: boolean }) {
+function MemberGroup({
+  label,
+  members,
+  currentUserId,
+  onOpenDm,
+  dim,
+}: {
+  label: string;
+  members: Member[];
+  currentUserId: Id<"users"> | null;
+  onOpenDm: (otherUserId: Id<"users">) => void;
+  dim?: boolean;
+}) {
   if (members.length === 0) return null;
   return (
     <div className="mb-4">
       <h3 className="mb-1 px-1 text-xs font-bold uppercase text-content-muted">{label}</h3>
       <ul className={dim ? "opacity-60" : undefined}>
-        {members.map((member) => (
-          <li
-            key={member._id}
-            className="flex items-center gap-2 rounded px-1 py-1 hover:bg-surface-hover"
-          >
-            <div className="relative">
-              <Avatar name={member.name} avatarUrl={member.avatarUrl} size={32} />
-              <span
-                className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface-raised ${
-                  member.online ? "bg-online" : "bg-content-faint"
-                }`}
-              />
-            </div>
-            <span className="truncate text-sm text-content-primary">{member.name}</span>
-            {member.isOwner && (
-              <span className="ml-auto text-xs text-content-faint" title="Server owner">
-                👑
-              </span>
-            )}
-          </li>
-        ))}
+        {members.map((member) => {
+          const isSelf = member.userId === currentUserId;
+          return (
+            <li
+              key={member._id}
+              className="group flex items-center gap-2 rounded px-1 py-1 hover:bg-surface-hover"
+            >
+              <div className="relative">
+                <Avatar name={member.name} avatarUrl={member.avatarUrl} size={32} />
+                <span
+                  className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface-raised ${
+                    member.online ? "bg-online" : "bg-content-faint"
+                  }`}
+                />
+              </div>
+              <span className="truncate text-sm text-content-primary">{member.name}</span>
+              {member.isOwner && (
+                <span className="text-xs text-content-faint" title="Server owner">
+                  👑
+                </span>
+              )}
+              {!isSelf && (
+                <button
+                  onClick={() => onOpenDm(member.userId)}
+                  title={`Message ${member.name}`}
+                  className="ml-auto hidden text-content-muted hover:text-content-primary group-hover:block"
+                >
+                  💬
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

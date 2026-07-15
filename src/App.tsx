@@ -8,6 +8,7 @@ import Home from "./routes/Home";
 import JoinInvitePage from "./routes/JoinInvitePage";
 import ServerLayout, { ServerIndexRedirect } from "./routes/ServerLayout";
 import ChannelPage from "./routes/ChannelPage";
+import DirectMessagePage from "./routes/DirectMessagePage";
 
 // Auth-gated route wrapper (T014): redirects unauthenticated users to /login.
 // `isRefreshing` (research.md §1) isn't treated as a full reload — only the
@@ -57,6 +58,7 @@ export default function App() {
         }
       >
         <Route path="/" element={<Home />} />
+        <Route path="/dm/:threadId" element={<DirectMessagePage />} />
         <Route path="/servers/:serverId" element={<ServerLayout />}>
           <Route index element={<ServerIndexRedirect />} />
           <Route path="channels/:channelId" element={<ChannelPage />} />

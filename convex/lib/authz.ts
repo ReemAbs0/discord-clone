@@ -48,6 +48,17 @@ export async function requireChannelOwner(ctx: Ctx, channelId: Id<"channels">) {
   return { userId, channel, server };
 }
 
+// DM threads are private to their two participants (FR-023).
+export async function requireThreadParticipant(ctx: Ctx, threadId: Id<"directMessageThreads">) {
+  const userId = await requireAuthUserId(ctx);
+  const thread = await ctx.db.get(threadId);
+  if (thread === null) throw new Error("Conversation not found");
+  if (thread.userAId !== userId && thread.userBId !== userId) {
+    throw new Error("Not a participant in this conversation");
+  }
+  return { userId, thread };
+}
+
 export async function requireAuthor<T extends { authorId: Id<"users"> }>(
   ctx: Ctx,
   doc: T,

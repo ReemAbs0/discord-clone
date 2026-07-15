@@ -47,7 +47,7 @@ test("a message sent in one session appears in real time in another (US2, consti
   await logIn(pageB, email, password);
   await pageB.goto(channelUrl);
 
-  const composerA = pageA.getByPlaceholder("Message #general");
+  const composerA = pageA.getByPlaceholder("Message the channel");
   await composerA.fill("Hello from session A");
   await composerA.press("Enter");
 

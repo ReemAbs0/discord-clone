@@ -152,11 +152,11 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Two users sharing a server open a DM, exchange messages in real time, edit/delete one (spec.md US6).
 
-- [ ] T051 [P] [US6] Create `convex/directMessageThreads.ts`: `getOrCreateWithUser` (requires a shared server — FR-022), `listForMe` (contracts/convex-api.md)
-- [ ] T052 [P] [US6] Create `convex/directMessages.ts`: `list` (paginated, author-joined same as `messages.ts`), `send`, `edit`, `remove` (FR-023)
-- [ ] T053 [US6] Build `src/routes/DirectMessagePage.tsx` reusing `MessageList`/`MessageComposer` against the DM thread
-- [ ] T054 [P] [US6] Add a DM entry point from `MemberList.tsx` (open/create a DM with a shared-server member)
-- [ ] T055 [P] [US6] `convex-test` tests for `directMessageThreads.ts` and `directMessages.ts` in `tests/unit/direct-messages.test.ts`
+- [X] T051 [P] [US6] Create `convex/directMessageThreads.ts`: `getOrCreateWithUser` (requires a shared server — FR-022), `listForMe` (contracts/convex-api.md)
+- [X] T052 [P] [US6] Create `convex/directMessages.ts`: `list` (paginated, author-joined same as `messages.ts`), `send`, `edit`, `remove` (FR-023)
+- [X] T053 [US6] Build `src/routes/DirectMessagePage.tsx` reusing `MessageList`/`MessageComposer` against the DM thread
+- [X] T054 [P] [US6] Add a DM entry point from `MemberList.tsx` (open/create a DM with a shared-server member)
+- [X] T055 [P] [US6] `convex-test` tests for `directMessageThreads.ts` and `directMessages.ts` in `tests/unit/direct-messages.test.ts`
 
 **Checkpoint**: US1–US6 functional
 
