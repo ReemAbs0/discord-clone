@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# convex
+convex/_generated/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor/OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# testing
+coverage/
+test-results/
+playwright-report/
+blob-report/

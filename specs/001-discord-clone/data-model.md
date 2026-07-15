@@ -32,7 +32,7 @@ via `getAuthUserId(ctx)` (research.md §1), which returns the `Id<"users">` of t
 | Field | Type | Notes |
 |---|---|---|
 | `name` | `string` | |
-| `imageUrl` | `string \| null` | Optional, per FR-004 |
+| `imageStorageId` | `Id<"_storage"> \| undefined` | Optional, per FR-004. Stores the storage ID, not a resolved URL — resolved at read time (same pattern as `users.avatarStorageId`), corrected during implementation for the same staleness reason |
 | `ownerId` | `Id<"users">` | The creator; ownership is not transferable in v1 (Assumptions) |
 | `createdAt` | `number` | |
 

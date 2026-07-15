@@ -27,14 +27,14 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Purpose**: Project scaffolding, before any feature code
 
-- [ ] T001 Initialize the Vite + React 18 + TypeScript project at the repo root (`package.json`, `vite.config.ts`); enable `strict: true` in `tsconfig.json` (constitution: Type Safety End-to-End)
-- [ ] T002 Initialize Convex (`npx convex dev` scaffold) creating `convex/` and writing `VITE_CONVEX_URL`/`CONVEX_DEPLOYMENT` to `.env.local` (gitignored, per plan.md)
-- [ ] T003 [P] Install and configure Tailwind CSS with a dark theme token set in `tailwind.config.ts` and `src/styles/index.css`
-- [ ] T004 [P] Configure React Router v6 skeleton in `src/main.tsx` and `src/App.tsx` (empty route table for now)
-- [ ] T005 [P] Configure Vitest + React Testing Library (`vitest.config.ts`, `tests/unit/` setup file)
-- [ ] T006 [P] Configure `convex-test` for backend unit tests (test harness config referenced from `tests/unit/`)
-- [ ] T007 [P] Configure Playwright (`playwright.config.ts`, `tests/e2e/` setup, multi-context support for two simulated users)
-- [ ] T008 [P] Configure ESLint + Prettier enforcing TypeScript strict mode across `src/` and `convex/`
+- [X] T001 Initialize the Vite + React 18 + TypeScript project at the repo root (`package.json`, `vite.config.ts`); enable `strict: true` in `tsconfig.json` (constitution: Type Safety End-to-End)
+- [X] T002 Initialize Convex (`npx convex dev` scaffold) creating `convex/` and writing `VITE_CONVEX_URL`/`CONVEX_DEPLOYMENT` to `.env.local` (gitignored, per plan.md)
+- [X] T003 [P] Install and configure Tailwind CSS with a dark theme token set in `tailwind.config.ts` and `src/styles/index.css`
+- [X] T004 [P] Configure React Router v6 skeleton in `src/main.tsx` and `src/App.tsx` (empty route table for now)
+- [X] T005 [P] Configure Vitest + React Testing Library (`vitest.config.ts`, `tests/unit/` setup file)
+- [X] T006 [P] Configure `convex-test` for backend unit tests (test harness config referenced from `tests/unit/`)
+- [X] T007 [P] Configure Playwright (`playwright.config.ts`, `tests/e2e/` setup, multi-context support for two simulated users)
+- [X] T008 [P] Configure ESLint + Prettier enforcing TypeScript strict mode across `src/` and `convex/`
 
 ---
 
@@ -44,13 +44,13 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T009 Define `convex/schema.ts`: extend Convex Auth's `authTables.users` in place with `avatarStorageId` (no separate profile table — data-model.md User, research.md §1), plus all 12 app tables (`servers`, `serverMembers`, `invites`, `channels`, `messages`, `directMessageThreads`, `directMessages`, `typingIndicators`, `presence`, `calls`, `callParticipants`, `signals`) with every index listed in data-model.md
-- [ ] T010 Configure Convex Auth Password provider: `convex/auth.config.ts`, `convex/auth.ts` (`convexAuth({ providers: [Password] })`), `convex/http.ts` (`auth.addHttpRoutes`) — exact shapes in research.md §1
-- [ ] T011 [P] Create `convex/lib/authz.ts` shared helpers: `requireServerMember`, `requireServerOwner`, `requireAuthor`, `requireCallParticipant`, all built on `getAuthUserId(ctx)` (research.md §1; every contract in contracts/convex-api.md routes through these)
-- [ ] T012 [P] Create `convex/files.ts`: `generateUploadUrl` mutation shared by avatar and server-image uploads (contracts/convex-api.md files.ts)
-- [ ] T013 [P] Create `src/lib/convexClient.ts` (`ConvexReactClient` construction) and wrap the app in `ConvexAuthProvider` in `src/main.tsx` (research.md §1)
-- [ ] T014 [P] Build `src/App.tsx` route table plus an auth-gated route wrapper (redirect unauthenticated users to `/login`) using `useConvexAuth()`
-- [ ] T015 Create `convex/users.ts`: `getMe`, `updateProfile` (contracts/convex-api.md users.ts, operating directly on the Convex Auth `users` row)
+- [X] T009 Define `convex/schema.ts`: extend Convex Auth's `authTables.users` in place with `avatarStorageId` (no separate profile table — data-model.md User, research.md §1), plus all 12 app tables (`servers`, `serverMembers`, `invites`, `channels`, `messages`, `directMessageThreads`, `directMessages`, `typingIndicators`, `presence`, `calls`, `callParticipants`, `signals`) with every index listed in data-model.md
+- [X] T010 Configure Convex Auth Password provider: `convex/auth.config.ts`, `convex/auth.ts` (`convexAuth({ providers: [Password] })`), `convex/http.ts` (`auth.addHttpRoutes`) — exact shapes in research.md §1
+- [X] T011 [P] Create `convex/lib/authz.ts` shared helpers: `requireServerMember`, `requireServerOwner`, `requireAuthor`, `requireCallParticipant`, all built on `getAuthUserId(ctx)` (research.md §1; every contract in contracts/convex-api.md routes through these)
+- [X] T012 [P] Create `convex/files.ts`: `generateUploadUrl` mutation shared by avatar and server-image uploads (contracts/convex-api.md files.ts)
+- [X] T013 [P] Create `src/lib/convexClient.ts` (`ConvexReactClient` construction) and wrap the app in `ConvexAuthProvider` in `src/main.tsx` (research.md §1)
+- [X] T014 [P] Build `src/App.tsx` route table plus an auth-gated route wrapper (redirect unauthenticated users to `/login`) using `useConvexAuth()`
+- [X] T015 Create `convex/users.ts`: `getMe`, `updateProfile` (contracts/convex-api.md users.ts, operating directly on the Convex Auth `users` row)
 
 **Checkpoint**: Schema deployed, auth working, app shell renders behind a login gate — user story work can now begin
 
@@ -62,15 +62,15 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Register a new account, log in, confirm the profile (name/avatar) is visible and shows "online" in a second session viewing the same user; log out and confirm the other session sees "offline" (spec.md US1).
 
-- [ ] T016 [P] [US1] Build `src/routes/SignupPage.tsx` (email, password, display name, optional avatar form calling `useAuthActions().signIn("password", { flow: "signUp", ... })`)
-- [ ] T017 [P] [US1] Build `src/routes/LoginPage.tsx` (email/password form calling `signIn("password", { flow: "signIn", ... })`)
-- [ ] T018 [US1] Create `convex/presence.ts`: `heartbeat`, `clearMine`, `getForUsers` (contracts/convex-api.md presence.ts; research.md §2)
-- [ ] T019 [US1] Create `convex/crons.ts` with the `sweepStalePresence` job (every 15s, 30s staleness threshold — research.md §2)
-- [ ] T020 [US1] Create `src/lib/usePresenceHeartbeat.ts`: recurring `presence.heartbeat` call plus an immediate call on login, and wire `presence.clearMine` into the sign-out action for the eager offline transition (research.md §2)
-- [ ] T021 [US1] Build a minimal authenticated landing view (`src/routes/Home.tsx`) rendering the caller's own profile (name/avatar) and an online indicator, sufficient to exercise the Independent Test
-- [ ] T022 [US1] Build a profile-editing view (e.g. a settings panel reachable from `Home.tsx`) letting the user change their display name and upload a new avatar via `files.generateUploadUrl` + `users.updateProfile` (FR-002)
-- [ ] T023 [P] [US1] Vitest test for `usePresenceHeartbeat` in `tests/unit/usePresenceHeartbeat.test.ts`
-- [ ] T024 [P] [US1] `convex-test` tests for `presence.ts` (heartbeat upsert, `clearMine` deletion, auth requirement) in `tests/unit/presence.test.ts`
+- [X] T016 [P] [US1] Build `src/routes/SignupPage.tsx` (email, password, display name, optional avatar form calling `useAuthActions().signIn("password", { flow: "signUp", ... })`)
+- [X] T017 [P] [US1] Build `src/routes/LoginPage.tsx` (email/password form calling `signIn("password", { flow: "signIn", ... })`)
+- [X] T018 [US1] Create `convex/presence.ts`: `heartbeat`, `clearMine`, `getForUsers` (contracts/convex-api.md presence.ts; research.md §2)
+- [X] T019 [US1] Create `convex/crons.ts` with the `sweepStalePresence` job (every 15s, 30s staleness threshold — research.md §2)
+- [X] T020 [US1] Create `src/lib/usePresenceHeartbeat.ts`: recurring `presence.heartbeat` call plus an immediate call on login, and wire `presence.clearMine` into the sign-out action for the eager offline transition (research.md §2)
+- [X] T021 [US1] Build a minimal authenticated landing view (`src/routes/Home.tsx`) rendering the caller's own profile (name/avatar) and an online indicator, sufficient to exercise the Independent Test
+- [X] T022 [US1] Build a profile-editing view (e.g. a settings panel reachable from `Home.tsx`) letting the user change their display name and upload a new avatar via `files.generateUploadUrl` + `users.updateProfile` (FR-002)
+- [X] T023 [P] [US1] Vitest test for `usePresenceHeartbeat` in `tests/unit/usePresenceHeartbeat.test.ts`
+- [X] T024 [P] [US1] `convex-test` tests for `presence.ts` (heartbeat upsert, `clearMine` deletion, auth requirement) in `tests/unit/presence.test.ts`
 
 **Checkpoint**: US1 fully functional and independently testable
 
@@ -82,16 +82,16 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Create a server, confirm "general" exists automatically, send a message, confirm it appears immediately in another session viewing the same channel (spec.md US2).
 
-- [ ] T025 [P] [US2] Create `convex/servers.ts`: `create` (atomically also creates the owner's `ServerMember` row and the default "general" `Channel` — FR-004/FR-005), `listForMe`, `get`, `rename` (contracts/convex-api.md servers.ts)
-- [ ] T026 [P] [US2] Create `convex/channels.ts` with `listForServer` only for now (`create`/`rename`/`remove` land in US5)
-- [ ] T027 [US2] Create `convex/messages.ts` with `send` and `list` (paginated, newest-first, **joined against `users` for `authorName`/`authorAvatarUrl`** — FR-016, data-model.md Message read-time-join note, contracts/convex-api.md messages.ts); `edit`/`remove` land in US4
-- [ ] T028 [P] [US2] Build `src/routes/ServerLayout.tsx` (server rail + create-server action) and `src/components/layout/ServerRail.tsx`
-- [ ] T029 [US2] Build `src/routes/ChannelPage.tsx` rendering the "general" channel via `usePaginatedQuery(api.messages.list, ...)` (a full channel-list sidebar isn't needed yet — only "general" exists until US5's `ChannelSidebar.tsx` lands)
-- [ ] T030 [P] [US2] Build `src/components/chat/MessageList.tsx` and `MessageItem.tsx` (author name, avatar, timestamp, content per FR-016)
-- [ ] T031 [P] [US2] Build `src/components/chat/MessageComposer.tsx` (send message, optimistic `insertAtTop` per research.md §7)
-- [ ] T032 [P] [US2] Playwright smoke test `tests/e2e/send-message.spec.ts` — two browser contexts, one sends, the other sees it in real time (constitution-mandated minimum)
-- [ ] T033 [P] [US2] `convex-test` tests for `servers.ts` (atomic create) in `tests/unit/servers.test.ts`
-- [ ] T034 [P] [US2] `convex-test` tests for `messages.ts` `send`/`list` (membership authz, author join) in `tests/unit/messages.test.ts`
+- [X] T025 [P] [US2] Create `convex/servers.ts`: `create` (atomically also creates the owner's `ServerMember` row and the default "general" `Channel` — FR-004/FR-005), `listForMe`, `get`, `rename` (contracts/convex-api.md servers.ts)
+- [X] T026 [P] [US2] Create `convex/channels.ts` with `listForServer` only for now (`create`/`rename`/`remove` land in US5)
+- [X] T027 [US2] Create `convex/messages.ts` with `send` and `list` (paginated, newest-first, **joined against `users` for `authorName`/`authorAvatarUrl`** — FR-016, data-model.md Message read-time-join note, contracts/convex-api.md messages.ts); `edit`/`remove` land in US4
+- [X] T028 [P] [US2] Build `src/routes/ServerLayout.tsx` (server rail + create-server action) and `src/components/layout/ServerRail.tsx`
+- [X] T029 [US2] Build `src/routes/ChannelPage.tsx` rendering the "general" channel via `usePaginatedQuery(api.messages.list, ...)` (a full channel-list sidebar isn't needed yet — only "general" exists until US5's `ChannelSidebar.tsx` lands)
+- [X] T030 [P] [US2] Build `src/components/chat/MessageList.tsx` and `MessageItem.tsx` (author name, avatar, timestamp, content per FR-016)
+- [X] T031 [P] [US2] Build `src/components/chat/MessageComposer.tsx` (send message, optimistic `insertAtTop` per research.md §7)
+- [X] T032 [P] [US2] Playwright smoke test `tests/e2e/send-message.spec.ts` — two browser contexts, one sends, the other sees it in real time (constitution-mandated minimum)
+- [X] T033 [P] [US2] `convex-test` tests for `servers.ts` (atomic create) in `tests/unit/servers.test.ts`
+- [X] T034 [P] [US2] `convex-test` tests for `messages.ts` `send`/`list` (membership authz, author join) in `tests/unit/messages.test.ts`
 
 **Checkpoint**: US1 + US2 functional — core real-time chat loop works
 

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/*
+  Discord-like dark theme tokens (Tailwind v4 CSS-first config — no tailwind.config.ts needed).
+  These become utility classes: bg-surface-base, text-content-primary, etc.
+*/
+@theme {
+  --color-surface-base: #313338;
+  --color-surface-deepest: #1e1f22;
+  --color-surface-raised: #2b2d31;
+  --color-surface-rail: #1e1f22;
+  --color-surface-hover: #3f4147;
+
+  --color-content-primary: #f2f3f5;
+  --color-content-muted: #949ba4;
+  --color-content-faint: #6d6f78;
+
+  --color-accent: #5865f2;
+  --color-accent-hover: #4752c4;
+  --color-online: #23a55a;
+  --color-danger: #da373c;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-surface-base text-content-primary antialiased;
+}

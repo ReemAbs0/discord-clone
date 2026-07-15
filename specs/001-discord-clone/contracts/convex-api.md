@@ -8,8 +8,10 @@ enforce before doing anything else. "Auth rule" always implies "caller must be a
 as a baseline; only the *additional*, resource-specific check is spelled out.
 
 Every mutation that inserts, edits, or deletes MUST use the shared helpers in `convex/lib/authz.ts`
-(`requireServerMember`, `requireServerOwner`, `requireAuthor`, `requireCallParticipant`, etc.) rather
-than re-implementing checks inline, so the rule is enforced identically everywhere it applies.
+(`requireServerMember`, `requireServerOwner`, `requireChannelMember`, `requireAuthor`,
+`requireCallParticipant`, etc.) rather than re-implementing checks inline, so the rule is enforced
+identically everywhere it applies. `requireChannelMember` was added during implementation — channels
+are scoped by server, not membership directly, so it resolves the channel's server first.
 
 ## users.ts
 
@@ -18,7 +20,7 @@ there is no separate profile table) via `getAuthUserId(ctx)`.
 
 | Function | Type | Args | Returns | Auth rule |
 |---|---|---|---|---|
-| `getMe` | query | `{}` | `{ name, email, avatarUrl } \| null` | Caller reads only their own row (`ctx.db.get(getAuthUserId(ctx))`) |
+| `getMe` | query | `{}` | `{ id, name, email, avatarUrl } \| null` | Caller reads only their own row (`ctx.db.get(getAuthUserId(ctx))`). `id` added during implementation — the frontend needs it to reference "myself" in other queries (e.g. `presence.getForUsers`) |
 | `updateProfile` | mutation | `{ name?: string, avatarStorageId?: Id<"_storage"> }` | `void` | Caller may only update their own row |
 
 ## files.ts
