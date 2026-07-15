@@ -8,3 +8,8 @@ export const PRESENCE_STALE_AFTER_MS = 30_000;
 // Shared by typingIndicators.listForChannel (display) and the
 // crons.sweepStaleTyping job (research.md §2).
 export const TYPING_STALE_AFTER_MS = 5_000;
+
+// Full-mesh cap (FR-025). A voice/video call refuses a join once this many
+// participants are already connected — mesh cost grows O(n²), acceptable only
+// to ~4 (plan.md Constraints).
+export const MAX_CALL_PARTICIPANTS = 4;

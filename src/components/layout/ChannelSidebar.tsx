@@ -7,14 +7,23 @@ import InviteButton from "./InviteButton";
 
 type ChannelType = "text" | "voice";
 
+type ConnectedByChannel = Map<string, { userId: Id<"users">; name: string }[]>;
+
 export default function ChannelSidebar({ serverId }: { serverId: Id<"servers"> }) {
   const server = useQuery(api.servers.get, { serverId });
   const me = useQuery(api.users.getMe);
   const channels = useQuery(api.channels.listForServer, { serverId });
+  const activeCalls = useQuery(api.calls.listActiveForServer, { serverId });
   const isOwner = server !== undefined && me != null && server.ownerId === me.id;
 
-  const match = useMatch("/servers/:serverId/channels/:channelId");
-  const activeChannelId = match?.params.channelId ?? null;
+  // Active on either the text-channel or voice-channel route.
+  const textMatch = useMatch("/servers/:serverId/channels/:channelId");
+  const voiceMatch = useMatch("/servers/:serverId/voice/:channelId");
+  const activeChannelId = textMatch?.params.channelId ?? voiceMatch?.params.channelId ?? null;
+
+  const connectedByChannel: ConnectedByChannel = new Map(
+    (activeCalls ?? []).map((entry) => [entry.channelId, entry.participants]),
+  );
 
   const [creatingType, setCreatingType] = useState<ChannelType | null>(null);
 
@@ -48,6 +57,7 @@ export default function ChannelSidebar({ serverId }: { serverId: Id<"servers"> }
           isOwner={isOwner}
           serverId={serverId}
           activeChannelId={activeChannelId}
+          connectedByChannel={connectedByChannel}
           onCreate={() => setCreatingType("voice")}
         />
       </div>
@@ -69,6 +79,7 @@ function ChannelSection({
   isOwner,
   serverId,
   activeChannelId,
+  connectedByChannel,
   onCreate,
 }: {
   label: string;
@@ -76,6 +87,7 @@ function ChannelSection({
   isOwner: boolean;
   serverId: Id<"servers">;
   activeChannelId: string | null;
+  connectedByChannel?: ConnectedByChannel;
   onCreate: () => void;
 }) {
   return (
@@ -100,6 +112,7 @@ function ChannelSection({
             isOwner={isOwner}
             serverId={serverId}
             isActive={channel._id === activeChannelId}
+            connected={connectedByChannel?.get(channel._id) ?? []}
           />
         ))}
       </ul>
@@ -112,11 +125,13 @@ function ChannelRow({
   isOwner,
   serverId,
   isActive,
+  connected,
 }: {
   channel: Doc<"channels">;
   isOwner: boolean;
   serverId: Id<"servers">;
   isActive: boolean;
+  connected: { userId: Id<"users">; name: string }[];
 }) {
   const renameChannel = useMutation(api.channels.rename);
   const removeChannel = useMutation(api.channels.remove);
@@ -176,11 +191,16 @@ function ChannelRow({
     </>
   );
 
+  const to =
+    channel.type === "text"
+      ? `/servers/${serverId}/channels/${channel._id}`
+      : `/servers/${serverId}/voice/${channel._id}`;
+
   return (
-    <li className="group flex items-center gap-1">
-      {channel.type === "text" ? (
+    <li className="group">
+      <div className="flex items-center gap-1">
         <Link
-          to={`/servers/${serverId}/channels/${channel._id}`}
+          to={to}
           className={`flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1 text-sm ${
             isActive
               ? "bg-surface-hover text-content-primary"
@@ -189,35 +209,40 @@ function ChannelRow({
         >
           {rowInner}
         </Link>
-      ) : (
-        <span
-          className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1 text-sm text-content-muted"
-          title="Voice channels are joinable in a later milestone"
-        >
-          {rowInner}
-        </span>
-      )}
 
-      {isOwner && (
-        <span className="hidden shrink-0 gap-1 pr-1 text-content-muted group-hover:flex">
-          <button
-            onClick={() => {
-              setDraft(channel.name);
-              setEditing(true);
-            }}
-            title="Rename"
-            className="hover:text-content-primary"
-          >
-            ✎
-          </button>
-          <button
-            onClick={() => void handleDelete()}
-            title="Delete"
-            className="hover:text-danger"
-          >
-            ✕
-          </button>
-        </span>
+        {isOwner && (
+          <span className="hidden shrink-0 gap-1 pr-1 text-content-muted group-hover:flex">
+            <button
+              onClick={() => {
+                setDraft(channel.name);
+                setEditing(true);
+              }}
+              title="Rename"
+              className="hover:text-content-primary"
+            >
+              ✎
+            </button>
+            <button
+              onClick={() => void handleDelete()}
+              title="Delete"
+              className="hover:text-danger"
+            >
+              ✕
+            </button>
+          </span>
+        )}
+      </div>
+
+      {/* FR-030: who's currently connected to this voice channel. */}
+      {channel.type === "voice" && connected.length > 0 && (
+        <ul className="ml-6 mt-0.5 space-y-0.5">
+          {connected.map((p) => (
+            <li key={p.userId} className="flex items-center gap-1.5 text-xs text-content-muted">
+              <span className="h-1.5 w-1.5 rounded-full bg-online" />
+              <span className="truncate">{p.name}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </li>
   );

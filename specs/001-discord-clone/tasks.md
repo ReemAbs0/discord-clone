@@ -168,19 +168,19 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Two members join the same voice channel, confirm audio/video both ways, toggle mic/camera and see it reflected, confirm the channel list shows both connected, then start a 1-on-1 call from a DM (spec.md US7).
 
-- [ ] T056 [US7] Create `convex/calls.ts`: `getOrCreateForChannel`, `getOrCreateForThread`, `join` (4-participant cap — FR-025), `leave`, `setMicCamera`, `listParticipants`, `listActiveForServer` (contracts/convex-api.md calls.ts)
-- [ ] T057 [US7] Create `convex/signals.ts`: `send`, `listForMe`, `ack` (contracts/convex-api.md signals.ts — ack only after successful apply, research.md §3)
-- [ ] T058 [US7] Add the `sweepOrphanedSignals` job to `convex/crons.ts` (every 60s, 5-minute age cutoff)
-- [ ] T059 [US7] Build `src/features/calls/useWebRtcCall.ts`: the peer-connection registry (`Map<userId, PeerState>`), dual creation triggers (proactive from `listParticipants`, lazy from an unrecognized `signals.listForMe` sender), the perfect-negotiation handlers, `onicecandidate` wiring, and teardown on departure (research.md §3)
-- [ ] T060 [US7] Add ICE restart handling to `useWebRtcCall.ts`: `connectionstatechange` → `restartIce()` on `"failed"`, debounced on `"disconnected"` (research.md §4)
-- [ ] T061 [P] [US7] Build `src/features/calls/useSpeakingDetection.ts`: client-local Web Audio `AnalyserNode`-based speaking detection per track, never round-tripped through Convex (research.md §5, FR-028)
-- [ ] T062 [P] [US7] Build `src/components/call/VideoTile.tsx` (renders a participant's video, mute state from `CallParticipant.micOn`, speaking state from T061) and `CallGrid.tsx`
-- [ ] T063 [P] [US7] Build `src/components/call/CallControls.tsx` (mic/camera toggle → `calls.setMicCamera` + local track `enabled`, leave → `calls.leave`)
-- [ ] T064 [US7] Build `src/routes/VoiceChannelPage.tsx` wiring `useWebRtcCall` + `CallGrid` + `CallControls` for a voice channel, including a "this channel is full" error state when `calls.join` rejects at the 4-participant cap (FR-025 AC7)
-- [ ] T065 [P] [US7] Wire `calls.listActiveForServer` into `ChannelSidebar.tsx` to show who's connected to each voice channel (FR-030)
-- [ ] T066 [P] [US7] Add a "start video call" entry point to `DirectMessagePage.tsx` using `calls.getOrCreateForThread` (FR-031)
-- [ ] T067 [P] [US7] Playwright smoke test `tests/e2e/join-call.spec.ts` — two contexts with `--use-fake-device-for-media-stream`, join the same voice channel, assert both see a connected remote video tile (constitution-mandated minimum)
-- [ ] T068 [P] [US7] `convex-test` tests for `calls.ts` (4-participant cap, authz) and `signals.ts` in `tests/unit/calls.test.ts`
+- [X] T056 [US7] Create `convex/calls.ts`: `getOrCreateForChannel`, `getOrCreateForThread`, `join` (4-participant cap — FR-025), `leave`, `setMicCamera`, `listParticipants`, `listActiveForServer` (contracts/convex-api.md calls.ts)
+- [X] T057 [US7] Create `convex/signals.ts`: `send`, `listForMe`, `ack` (contracts/convex-api.md signals.ts — ack only after successful apply, research.md §3)
+- [X] T058 [US7] Add the `sweepOrphanedSignals` job to `convex/crons.ts` (every 60s, 5-minute age cutoff)
+- [X] T059 [US7] Build `src/features/calls/useWebRtcCall.ts`: the peer-connection registry (`Map<userId, PeerState>`), dual creation triggers (proactive from `listParticipants`, lazy from an unrecognized `signals.listForMe` sender), the perfect-negotiation handlers, `onicecandidate` wiring, and teardown on departure (research.md §3)
+- [X] T060 [US7] Add ICE restart handling to `useWebRtcCall.ts`: `connectionstatechange` → `restartIce()` on `"failed"`, debounced on `"disconnected"` (research.md §4)
+- [X] T061 [P] [US7] Build `src/features/calls/useSpeakingDetection.ts`: client-local Web Audio `AnalyserNode`-based speaking detection per track, never round-tripped through Convex (research.md §5, FR-028)
+- [X] T062 [P] [US7] Build `src/components/call/VideoTile.tsx` (renders a participant's video, mute state from `CallParticipant.micOn`, speaking state from T061) and `CallGrid.tsx`
+- [X] T063 [P] [US7] Build `src/components/call/CallControls.tsx` (mic/camera toggle → `calls.setMicCamera` + local track `enabled`, leave → `calls.leave`)
+- [X] T064 [US7] Build `src/routes/VoiceChannelPage.tsx` wiring `useWebRtcCall` + `CallGrid` + `CallControls` for a voice channel, including a "this channel is full" error state when `calls.join` rejects at the 4-participant cap (FR-025 AC7)
+- [X] T065 [P] [US7] Wire `calls.listActiveForServer` into `ChannelSidebar.tsx` to show who's connected to each voice channel (FR-030)
+- [X] T066 [P] [US7] Add a "start video call" entry point to `DirectMessagePage.tsx` using `calls.getOrCreateForThread` (FR-031)
+- [X] T067 [P] [US7] Playwright smoke test `tests/e2e/join-call.spec.ts` — two contexts with `--use-fake-device-for-media-stream`, join the same voice channel, assert both see a connected remote video tile (constitution-mandated minimum)
+- [X] T068 [P] [US7] `convex-test` tests for `calls.ts` (4-participant cap, authz) and `signals.ts` in `tests/unit/calls.test.ts`
 
 **Checkpoint**: US1–US7 functional — the full non-admin feature set works
 

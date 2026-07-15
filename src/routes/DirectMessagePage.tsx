@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { insertAtTop, useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -49,6 +49,13 @@ function DmView({ threadId }: { threadId: Id<"directMessageThreads"> }) {
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-surface-hover px-4 font-semibold text-content-primary">
         <span className="text-content-faint">@</span>
         {other?.name ?? "Direct Message"}
+        <Link
+          to={`/dm/${threadId}/call`}
+          title="Start video call"
+          className="ml-auto rounded px-2 py-1 text-lg hover:bg-surface-hover"
+        >
+          📹
+        </Link>
       </header>
       <div className="min-h-0 flex-1">
         <MessageList

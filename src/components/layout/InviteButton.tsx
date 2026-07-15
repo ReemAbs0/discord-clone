@@ -72,6 +72,7 @@ export default function InviteButton({ serverId }: { serverId: Id<"servers"> }) 
             <div className="flex gap-2">
               <input
                 readOnly
+                aria-label="Invite link"
                 value={busy && !link ? "Generating…" : (link ?? "")}
                 className="min-w-0 flex-1 rounded bg-surface-deepest px-3 py-2 text-sm text-content-primary outline-none"
               />

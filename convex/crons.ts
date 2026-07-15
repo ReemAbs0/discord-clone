@@ -36,6 +36,24 @@ export const sweepStaleTyping = internalMutation({
   },
 });
 
+// Safety net for signaling rows a client never acked (e.g. it crashed mid-call).
+// Consumed rows are normally deleted immediately by signals.ack; anything left
+// over for 5 minutes is stale and safe to drop (research.md §3).
+const SIGNAL_MAX_AGE_MS = 5 * 60_000;
+
+export const sweepOrphanedSignals = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const cutoff = Date.now() - SIGNAL_MAX_AGE_MS;
+    const rows = await ctx.db.query("signals").collect();
+    for (const row of rows) {
+      if (row.createdAt < cutoff) {
+        await ctx.db.delete(row._id);
+      }
+    }
+  },
+});
+
 crons.interval(
   "sweep stale presence",
   { seconds: 15 },
@@ -47,6 +65,13 @@ crons.interval(
   "sweep stale typing indicators",
   { seconds: 5 },
   internal.crons.sweepStaleTyping,
+  {},
+);
+
+crons.interval(
+  "sweep orphaned signals",
+  { seconds: 60 },
+  internal.crons.sweepOrphanedSignals,
   {},
 );
 
