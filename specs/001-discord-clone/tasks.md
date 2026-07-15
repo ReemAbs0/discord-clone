@@ -120,13 +120,13 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Edit a message (see "(edited)"), delete another, watch a typing indicator appear/clear, scroll to load older history (spec.md US4).
 
-- [ ] T041 [US4] Extend `convex/messages.ts` with `edit` (sets `editedAt`, author-only) and `remove` (author-only) — FR-017/018/019
-- [ ] T042 [US4] Create `convex/typingIndicators.ts`: `heartbeat`, `listForChannel` (FR-021, research.md §2)
-- [ ] T043 [US4] Add the `sweepStaleTyping` job to `convex/crons.ts` (every 5s, 5s staleness threshold)
-- [ ] T044 [P] [US4] Build `src/components/chat/TypingIndicator.tsx` and wire `MessageComposer.tsx`'s input handler to `typingIndicators.heartbeat`
-- [ ] T045 [P] [US4] Add edit/delete controls to `MessageItem.tsx` for the current user's own messages, plus the "(edited)" marker
-- [ ] T046 [US4] Wire `MessageList.tsx`'s scroll-to-top to `usePaginatedQuery`'s `loadMore` (FR-020, research.md §7)
-- [ ] T047 [P] [US4] `convex-test` tests for `messages.ts` edit/remove authz and `typingIndicators.ts` in `tests/unit/messages-lifecycle.test.ts`
+- [X] T041 [US4] Extend `convex/messages.ts` with `edit` (sets `editedAt`, author-only) and `remove` (author-only) — FR-017/018/019
+- [X] T042 [US4] Create `convex/typingIndicators.ts`: `heartbeat`, `listForChannel` (FR-021, research.md §2)
+- [X] T043 [US4] Add the `sweepStaleTyping` job to `convex/crons.ts` (every 5s, 5s staleness threshold)
+- [X] T044 [P] [US4] Build `src/components/chat/TypingIndicator.tsx` and wire `MessageComposer.tsx`'s input handler to `typingIndicators.heartbeat`
+- [X] T045 [P] [US4] Add edit/delete controls to `MessageItem.tsx` for the current user's own messages, plus the "(edited)" marker
+- [X] T046 [US4] Wire `MessageList.tsx`'s scroll-to-top to `usePaginatedQuery`'s `loadMore` (FR-020, research.md §7)
+- [X] T047 [P] [US4] `convex-test` tests for `messages.ts` edit/remove authz and `typingIndicators.ts` in `tests/unit/messages-lifecycle.test.ts`
 
 **Checkpoint**: US1–US4 functional
 

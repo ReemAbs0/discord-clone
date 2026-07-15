@@ -1,7 +1,7 @@
 import { cronJobs } from "convex/server";
 import { internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { PRESENCE_STALE_AFTER_MS } from "./lib/constants";
+import { PRESENCE_STALE_AFTER_MS, TYPING_STALE_AFTER_MS } from "./lib/constants";
 
 const crons = cronJobs();
 
@@ -23,10 +23,30 @@ export const sweepStalePresence = internalMutation({
   },
 });
 
+export const sweepStaleTyping = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const cutoff = Date.now() - TYPING_STALE_AFTER_MS;
+    const rows = await ctx.db.query("typingIndicators").collect();
+    for (const row of rows) {
+      if (row.lastActiveAt < cutoff) {
+        await ctx.db.delete(row._id);
+      }
+    }
+  },
+});
+
 crons.interval(
   "sweep stale presence",
   { seconds: 15 },
   internal.crons.sweepStalePresence,
+  {},
+);
+
+crons.interval(
+  "sweep stale typing indicators",
+  { seconds: 5 },
+  internal.crons.sweepStaleTyping,
   {},
 );
 

@@ -1,9 +1,7 @@
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { mutation, query } from "./_generated/server";
-import { requireChannelMember } from "./lib/authz";
-
-// edit/remove land in US4 (T041) — send/list is the full US2 scope.
+import { requireAuthor, requireChannelMember } from "./lib/authz";
 
 export const list = query({
   args: { channelId: v.id("channels"), paginationOpts: paginationOptsValidator },
@@ -48,5 +46,27 @@ export const send = mutation({
       content,
       createdAt: Date.now(),
     });
+  },
+});
+
+// Author-only (FR-017/FR-019). Sets editedAt so the client renders "(edited)".
+export const edit = mutation({
+  args: { messageId: v.id("messages"), content: v.string() },
+  handler: async (ctx, { messageId, content }) => {
+    const message = await ctx.db.get(messageId);
+    if (message === null) throw new Error("Message not found");
+    await requireAuthor(ctx, message);
+    await ctx.db.patch(messageId, { content, editedAt: Date.now() });
+  },
+});
+
+// Author-only (FR-018/FR-019). Removes the message entirely — no placeholder.
+export const remove = mutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, { messageId }) => {
+    const message = await ctx.db.get(messageId);
+    if (message === null) throw new Error("Message not found");
+    await requireAuthor(ctx, message);
+    await ctx.db.delete(messageId);
   },
 });

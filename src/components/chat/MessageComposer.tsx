@@ -1,12 +1,27 @@
-import { useState, type FormEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { insertAtTop, useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
-// Typing-indicator wiring on this input lands in US4 (T044).
+// How often, at most, to send a typing heartbeat while composing. Well under
+// the 5s staleness window so an actively-typing user never flickers off.
+const TYPING_HEARTBEAT_THROTTLE_MS = 2_000;
+
 export default function MessageComposer({ channelId }: { channelId: Id<"channels"> }) {
   const me = useQuery(api.users.getMe);
+  const typingHeartbeat = useMutation(api.typingIndicators.heartbeat);
+  const lastTypingSentRef = useRef(0);
   const [content, setContent] = useState("");
+
+  function handleTyping(value: string) {
+    setContent(value);
+    if (value.length === 0) return;
+    const now = Date.now();
+    if (now - lastTypingSentRef.current >= TYPING_HEARTBEAT_THROTTLE_MS) {
+      lastTypingSentRef.current = now;
+      void typingHeartbeat({ channelId });
+    }
+  }
 
   // research.md §7: insertAtTop makes the sender's own message appear
   // instantly, without waiting for the round-trip.
@@ -58,7 +73,7 @@ export default function MessageComposer({ channelId }: { channelId: Id<"channels
     >
       <textarea
         value={content}
-        onChange={(e) => setContent(e.target.value)}
+        onChange={(e) => handleTyping(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Message #general"
         rows={1}
