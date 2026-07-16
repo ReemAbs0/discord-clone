@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { usePresenceHeartbeat } from "../lib/usePresenceHeartbeat";
 import ServerRail from "../components/layout/ServerRail";
+import RouteErrorBoundary from "../components/RouteErrorBoundary";
 
 // Persistent authenticated shell: the ServerRail is always the leftmost
 // column, and the routed content (home landing or a server) fills the rest
@@ -19,7 +20,9 @@ export default function AppShell() {
     <div className="flex h-screen">
       <ServerRail />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Outlet />
+        <RouteErrorBoundary>
+          <Outlet />
+        </RouteErrorBoundary>
       </div>
     </div>
   );

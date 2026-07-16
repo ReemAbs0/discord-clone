@@ -26,6 +26,7 @@ export default function ChannelSidebar({ serverId }: { serverId: Id<"servers"> }
   );
 
   const [creatingType, setCreatingType] = useState<ChannelType | null>(null);
+  const [renamingServer, setRenamingServer] = useState(false);
 
   const textChannels = channels?.filter((c) => c.type === "text") ?? [];
   const voiceChannels = channels?.filter((c) => c.type === "voice") ?? [];
@@ -33,7 +34,18 @@ export default function ChannelSidebar({ serverId }: { serverId: Id<"servers"> }
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-surface-rail">
       <div className="flex h-12 items-center border-b border-black/20 px-4">
-        <span className="truncate font-semibold text-content-primary">{server?.name ?? ""}</span>
+        {isOwner ? (
+          <button
+            onClick={() => setRenamingServer(true)}
+            title="Rename server"
+            className="flex min-w-0 flex-1 items-center justify-between font-semibold text-content-primary hover:text-content-muted"
+          >
+            <span className="truncate">{server?.name ?? ""}</span>
+            <span className="ml-1 text-xs text-content-faint">✎</span>
+          </button>
+        ) : (
+          <span className="truncate font-semibold text-content-primary">{server?.name ?? ""}</span>
+        )}
       </div>
 
       {isOwner && (
@@ -69,7 +81,83 @@ export default function ChannelSidebar({ serverId }: { serverId: Id<"servers"> }
           onClose={() => setCreatingType(null)}
         />
       )}
+
+      {renamingServer && (
+        <RenameServerModal
+          serverId={serverId}
+          currentName={server?.name ?? ""}
+          onClose={() => setRenamingServer(false)}
+        />
+      )}
     </aside>
+  );
+}
+
+function RenameServerModal({
+  serverId,
+  currentName,
+  onClose,
+}: {
+  serverId: Id<"servers">;
+  currentName: string;
+  onClose: () => void;
+}) {
+  const renameServer = useMutation(api.servers.rename);
+  const [name, setName] = useState(currentName);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === currentName) {
+      onClose();
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await renameServer({ serverId, name: trimmed });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <form
+        onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="w-80 space-y-3 rounded-lg bg-surface-base p-6"
+      >
+        <h2 className="text-lg font-semibold text-content-primary">Rename server</h2>
+        <input
+          autoFocus
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full rounded bg-surface-deepest px-3 py-2 text-sm text-content-primary outline-none"
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded bg-surface-hover px-3 py-1.5 text-sm text-content-primary"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+          >
+            {submitting ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

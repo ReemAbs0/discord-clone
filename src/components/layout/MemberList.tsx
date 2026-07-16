@@ -17,10 +17,12 @@ export default function MemberList({ serverId }: { serverId: Id<"servers"> }) {
   const members = useQuery(api.serverMembers.listForServer, { serverId });
   const me = useQuery(api.users.getMe);
   const leave = useMutation(api.serverMembers.leave);
+  const removeMember = useMutation(api.serverMembers.remove);
   const openDm = useMutation(api.directMessageThreads.getOrCreateWithUser);
   const navigate = useNavigate();
 
   const myRow = members?.find((m) => m.userId === me?.id);
+  const viewerIsOwner = myRow?.isOwner === true;
   const canLeave = myRow !== undefined && !myRow.isOwner;
 
   async function handleLeave() {
@@ -31,6 +33,11 @@ export default function MemberList({ serverId }: { serverId: Id<"servers"> }) {
   async function handleOpenDm(otherUserId: Id<"users">) {
     const threadId = await openDm({ otherUserId });
     navigate(`/dm/${threadId}`);
+  }
+
+  async function handleRemove(userId: Id<"users">, name: string) {
+    if (!window.confirm(`Remove ${name} from the server?`)) return;
+    await removeMember({ serverId, userId });
   }
 
   const online = members?.filter((m) => m.online) ?? [];
@@ -47,13 +54,17 @@ export default function MemberList({ serverId }: { serverId: Id<"servers"> }) {
               label={`Online — ${online.length}`}
               members={online}
               currentUserId={me?.id ?? null}
+              viewerIsOwner={viewerIsOwner}
               onOpenDm={handleOpenDm}
+              onRemove={handleRemove}
             />
             <MemberGroup
               label={`Offline — ${offline.length}`}
               members={offline}
               currentUserId={me?.id ?? null}
+              viewerIsOwner={viewerIsOwner}
               onOpenDm={handleOpenDm}
+              onRemove={handleRemove}
               dim
             />
           </>
@@ -75,13 +86,17 @@ function MemberGroup({
   label,
   members,
   currentUserId,
+  viewerIsOwner,
   onOpenDm,
+  onRemove,
   dim,
 }: {
   label: string;
   members: Member[];
   currentUserId: Id<"users"> | null;
+  viewerIsOwner: boolean;
   onOpenDm: (otherUserId: Id<"users">) => void;
+  onRemove: (userId: Id<"users">, name: string) => void;
   dim?: boolean;
 }) {
   if (members.length === 0) return null;
@@ -110,15 +125,27 @@ function MemberGroup({
                   👑
                 </span>
               )}
-              {!isSelf && (
-                <button
-                  onClick={() => onOpenDm(member.userId)}
-                  title={`Message ${member.name}`}
-                  className="ml-auto hidden text-content-muted hover:text-content-primary group-hover:block"
-                >
-                  💬
-                </button>
-              )}
+              <span className="ml-auto flex shrink-0 items-center gap-1">
+                {!isSelf && (
+                  <button
+                    onClick={() => onOpenDm(member.userId)}
+                    title={`Message ${member.name}`}
+                    className="hidden text-content-muted hover:text-content-primary group-hover:block"
+                  >
+                    💬
+                  </button>
+                )}
+                {/* Owner-only kick — never on the owner's own row (FR-010). */}
+                {viewerIsOwner && !member.isOwner && (
+                  <button
+                    onClick={() => onRemove(member.userId, member.name)}
+                    title={`Remove ${member.name}`}
+                    className="hidden text-content-muted hover:text-danger group-hover:block"
+                  >
+                    ✕
+                  </button>
+                )}
+              </span>
             </li>
           );
         })}

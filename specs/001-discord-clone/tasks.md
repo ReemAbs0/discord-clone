@@ -192,9 +192,9 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 **Independent Test**: Owner renames the server and removes a member; all members see the new name, the removed member immediately loses access (spec.md US8).
 
-- [ ] T069 [US8] Extend `convex/serverMembers.ts` with `remove` (owner-only, cannot target the owner — FR-010)
-- [ ] T070 [P] [US8] Add owner-only rename-server and remove-member controls to `ServerLayout.tsx`/`MemberList.tsx` (`servers.rename` already exists from US2)
-- [ ] T071 [P] [US8] `convex-test` tests for `serverMembers.remove` authz in `tests/unit/server-admin.test.ts`
+- [X] T069 [US8] Extend `convex/serverMembers.ts` with `remove` (owner-only, cannot target the owner — FR-010)
+- [X] T070 [P] [US8] Add owner-only rename-server and remove-member controls to `ServerLayout.tsx`/`MemberList.tsx` (`servers.rename` already exists from US2)
+- [X] T071 [P] [US8] `convex-test` tests for `serverMembers.remove` authz in `tests/unit/server-admin.test.ts`
 
 **Checkpoint**: All 8 user stories independently functional
 
