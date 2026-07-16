@@ -202,9 +202,9 @@ Single repository: `convex/` (backend functions + schema), `src/` (Vite React ap
 
 ## Phase 11: Polish & Cross-Cutting Concerns
 
-- [ ] T072 [P] Run every quickstart.md validation scenario end-to-end manually across two browser profiles
-- [ ] T073 [P] Confirm `tsc --noEmit` passes with zero errors across `src/` and `convex/` (constitution: Type Safety End-to-End)
-- [ ] T074 Review every function in `convex/*.ts` against contracts/convex-api.md's auth-rule column for 1:1 compliance (constitution: Security Basics gate)
+- [X] T072 [P] Run every quickstart.md validation scenario end-to-end manually across two browser profiles
+- [X] T073 [P] Confirm `tsc --noEmit` passes with zero errors across `src/` and `convex/` (constitution: Type Safety End-to-End)
+- [X] T074 Review every function in `convex/*.ts` against contracts/convex-api.md's auth-rule column for 1:1 compliance (constitution: Security Basics gate)
 
 ---
 
